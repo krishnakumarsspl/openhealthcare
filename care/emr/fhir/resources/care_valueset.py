@@ -50,15 +50,15 @@ class CareValueset:
         # Combine and return
         systems = {}
         for include in self.composition.include:
-            system = include.system.value()
+            system = include.system.root
             if system not in systems:
                 systems[system] = {"include": []}
-            systems[system]["include"].append(include.dict(skip_defaults=True))
+            systems[system]["include"].append(include.model_dump(exclude_defaults=True))
         for exclude in self.composition.exclude:
-            system = exclude.system.value()
+            system = exclude.system.root
             if system not in systems:
                 systems[system] = {"exclude": []}
-            systems[system]["exclude"].append(exclude.dict(skip_defaults=True))
+            systems[system]["exclude"].append(exclude.model_dump(exclude_defaults=True))
 
         results = []
 
