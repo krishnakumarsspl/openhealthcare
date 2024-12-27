@@ -3,7 +3,6 @@ from django.utils import timezone
 from django_filters import rest_framework as filters
 from drf_spectacular.utils import extend_schema
 from dry_rest_permissions.generics import DRYPermissions
-from redis_om import FindQuery
 from rest_framework import mixins, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -23,12 +22,10 @@ from care.facility.models import (
     generate_choices,
 )
 from care.facility.models.notification import Notification
-from care.facility.static_data.medibase import MedibaseMedicine
 from care.utils.filters.choicefilter import CareChoiceFilter
 from care.utils.filters.multiselect import MultiSelectFilter
 from care.utils.notification_handler import NotificationGenerator
 from care.utils.queryset.consultation import get_consultation_queryset
-from care.utils.static_data.helpers import query_builder, token_escaper
 
 
 def inverse_choices(choices):
@@ -184,27 +181,10 @@ class ConsultationPrescriptionViewSet(
 
 
 class MedibaseViewSet(ViewSet):
-    def serialize_data(self, objects: list[MedibaseMedicine]):
+    def serialize_data(self, objects: list):
         return [medicine.get_representation() for medicine in objects]
 
     def list(self, request):
-        try:
-            limit = min(int(request.query_params.get("limit")), 30)
-        except (ValueError, TypeError):
-            limit = 30
-
-        query = []
-        if t := request.query_params.get("type"):
-            query.append(MedibaseMedicine.type == t)
-
-        if q := request.query_params.get("query"):
-            query.append(
-                (MedibaseMedicine.name == token_escaper.escape(q))
-                | (MedibaseMedicine.vec % query_builder(q))
-            )
-
-        result = FindQuery(
-            expressions=query, model=MedibaseMedicine, limit=limit
-        ).execute(exhaust_results=False)
+        result = []
 
         return Response(self.serialize_data(result))
