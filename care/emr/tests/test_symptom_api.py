@@ -167,7 +167,7 @@ class TestSymptomViewSet(CareAPITestBase):
         self.assertEqual(response.status_code, 200)
 
     def test_list_symptoms_for_single_encounter_with_permissions_and_encounter_status_completed(
-        self,
+            self,
     ):
         """
         Users with `can_read_encounter` on a completed encounter can still list symptoms (HTTP 200).
@@ -220,13 +220,19 @@ class TestSymptomViewSet(CareAPITestBase):
 
     def test_create_symptom_without_permissions_on_facility(self):
         """
-        Users who lack `can_write_encounter` get (HTTP 403) when creating.
+        Tests that a user with `can_write_encounter` permissions but belonging to a different
+        organization receives (HTTP 403) when attempting to create a symptom.
         """
-        # No permission attached
         permissions = [EncounterPermissions.can_write_encounter.name]
         role = self.create_role_with_permissions(permissions)
-        organization = self.create_organization(org_type="govt")
-        self.attach_role_organization_user(organization, self.user, role)
+        external_user = self.create_user()
+        external_facility = self.create_facility(user=external_user)
+        external_organization = self.create_facility_organization(
+            facility=external_facility
+        )
+        self.attach_role_facility_organization_user(
+            external_organization, self.user, role
+        )
 
         encounter = self.create_encounter(
             patient=self.patient,
@@ -237,6 +243,43 @@ class TestSymptomViewSet(CareAPITestBase):
         symptom_data_dict = self.generate_data_for_symptom(encounter)
 
         response = self.client.post(self.base_url, symptom_data_dict, format="json")
+        self.assertEqual(response.status_code, 403)
+
+    def test_create_symptom_with_organisation_user_with_permissions(self):
+        """
+        Ensures that a user from a certain organization, who has both
+        `can_write_encounter` and `can_view_clinical_data`, can successfully
+        view symptom data (HTTP 200) but still receives (HTTP 403) when attempting
+        to create a symptom for an encounter.
+        """
+        organization = self.create_organization(org_type="govt")
+        patient = self.create_patient(geo_organization=organization)
+
+        permissions = [
+            EncounterPermissions.can_write_encounter.name,
+            PatientPermissions.can_view_clinical_data.name,
+        ]
+        role = self.create_role_with_permissions(permissions)
+        self.attach_role_organization_user(organization, self.user, role)
+
+        # Verify the user can view symptom data (HTTP 200)
+        test_url = reverse(
+            "symptom-list", kwargs={"patient_external_id": patient.external_id}
+        )
+        response = self.client.get(test_url)
+        self.assertEqual(response.status_code, 200)
+
+        encounter = self.create_encounter(
+            patient=patient,
+            facility=self.facility,
+            organization=self.organization,
+            status=None,
+        )
+
+        symptom_data_dict = self.generate_data_for_symptom(encounter)
+        response = self.client.post(test_url, symptom_data_dict, format="json")
+
+        # User gets 403 because the encounter belongs to a different organization
         self.assertEqual(response.status_code, 403)
 
     def test_create_symptom_with_permissions(self):
@@ -279,7 +322,7 @@ class TestSymptomViewSet(CareAPITestBase):
         response = self.client.post(self.base_url, symptom_data_dict, format="json")
         self.assertEqual(response.status_code, 403)
 
-    #                         RETRIEVE TESTS
+    # RETRIEVE TESTS
     def test_retrieve_symptom_with_permissions(self):
         """
         Users with `can_view_clinical_data` => (HTTP 200).
@@ -352,7 +395,7 @@ class TestSymptomViewSet(CareAPITestBase):
         retrieve_response = self.client.get(url)
         self.assertEqual(retrieve_response.status_code, 403)
 
-    #                         UPDATE TESTS
+    # UPDATE TESTS
     def test_update_symptom_with_permissions(self):
         """
         Users with `can_write_encounter` + `can_view_clinical_data`
@@ -492,7 +535,7 @@ class TestSymptomViewSet(CareAPITestBase):
         update_response = self.client.put(url, symptom_data_updated, format="json")
         self.assertEqual(update_response.status_code, 403)
 
-    #                         DELETE TESTS
+    # DELETE TESTS
     def test_delete_symptom_with_permission(self):
         """
         Users with `can_write_encounter` + `can_view_clinical_data` => (HTTP 204).
