@@ -13,7 +13,7 @@ class ObservationDefinition(EMRBaseModel):
     )
     version = models.IntegerField(default=1)
     slug = models.CharField(max_length=255)
-    name = models.CharField(max_length=1024)
+    title = models.CharField(max_length=1024)
     status = models.CharField(max_length=255)
     description = models.TextField()
     derived_from_uri = models.TextField()

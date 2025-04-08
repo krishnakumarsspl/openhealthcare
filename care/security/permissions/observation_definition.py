@@ -5,7 +5,7 @@ from care.security.roles.role import (
     ADMIN_ROLE,
     DOCTOR_ROLE,
     FACILITY_ADMIN_ROLE,
-    GEO_ADMIN,
+    ADMINISTRATOR,
     NURSE_ROLE,
     STAFF_ROLE,
     VOLUNTEER_ROLE,
@@ -25,7 +25,7 @@ class ObservationDefinitionPermissions(enum.Enum):
         PermissionContext.FACILITY,
         [
             FACILITY_ADMIN_ROLE,
-            GEO_ADMIN,
+            ADMINISTRATOR,
             ADMIN_ROLE,
             STAFF_ROLE,
             DOCTOR_ROLE,
