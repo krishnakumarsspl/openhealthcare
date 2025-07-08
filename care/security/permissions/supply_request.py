@@ -17,7 +17,7 @@ class SupplyRequestPermissions(enum.Enum):
         "Can Create Supply Request on Facility",
         "",
         PermissionContext.FACILITY,
-        [FACILITY_ADMIN_ROLE, ADMIN_ROLE],
+        [FACILITY_ADMIN_ROLE, ADMIN_ROLE, STAFF_ROLE, DOCTOR_ROLE, NURSE_ROLE],
     )
     can_read_supply_request = Permission(
         "Can Read Supply Request",
