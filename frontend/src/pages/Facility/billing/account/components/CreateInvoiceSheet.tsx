@@ -70,3 +70,5 @@ export function CreateInvoiceSheet({
     </Sheet>
   );
 }
+
+export default CreateInvoiceSheet;

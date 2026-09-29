@@ -1,4 +1,4 @@
-import "@fontsource/libre-barcode-128-text/index.css";
+import "@fontsource/libre-barcode-128-text";
 import { Droplet, FileText, TestTube } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -141,3 +141,5 @@ export function SpecimenIDScanSuccessDialog({
     </Dialog>
   );
 }
+
+export default SpecimenIDScanSuccessDialog;

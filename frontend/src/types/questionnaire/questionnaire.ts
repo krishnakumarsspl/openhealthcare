@@ -1,6 +1,7 @@
 import { Code } from "@/types/base/code/code";
 
 import { Question } from "./question";
+import { QuestionnaireTagRead } from "./tags";
 
 export type SubjectType = "patient" | "encounter";
 
@@ -19,10 +20,12 @@ export interface QuestionnaireBase {
 
 export interface QuestionnaireRead extends QuestionnaireBase {
   id: string;
+  tags: QuestionnaireTagRead[];
 }
 
 export interface QuestionnaireCreate extends QuestionnaireBase {
   organizations: string[];
+  tags: string[];
 }
 
 export type QuestionnaireUpdate = QuestionnaireBase;

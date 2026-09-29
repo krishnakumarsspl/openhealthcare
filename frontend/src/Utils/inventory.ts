@@ -1,7 +1,5 @@
-import { addMonths, endOfMonth, formatDate, isAfter } from "date-fns";
+import { addMonths, endOfMonth, isAfter } from "date-fns";
 
-import { Badge } from "@/components/ui/badge";
-import { InventoryRead } from "@/types/inventory/product/inventory";
 import careConfig from "@careConfig";
 
 export type ExpiryStatus = "expired" | "expiring_soon" | "valid";
@@ -51,31 +49,22 @@ export function isProductRestrictedFromDispensing(
  * @param expirationDate - The expiration date string
  * @returns boolean - true if the lot is valid for selection
  */
-export function isLotAllowedForDispensing(inventory: InventoryRead) {
-  return !isProductRestrictedFromDispensing(inventory.product.expiration_date);
+export function isLotAllowedForDispensing(
+  expirationDate: string | undefined,
+): boolean {
+  return !isProductRestrictedFromDispensing(expirationDate);
 }
 
 /**
  * Gets the badge variant for displaying expiry status
  * @param expirationDate - The expiration date string
- * @returns Badge variant - "destructive" for expired, "yellow" for expiring soon, "green" for valid
+ * @returns Badge variant - "destructive" for expired, "yellow" for expiring soon, "primary" for valid
  */
 export function getExpiryBadgeVariant(
   expirationDate: string | undefined,
-): React.ComponentProps<typeof Badge>["variant"] {
+): "destructive" | "yellow" | "primary" {
   const status = getExpiryStatus(expirationDate);
   if (status === "expired") return "destructive";
   if (status === "expiring_soon") return "yellow";
-  return "green";
-}
-
-/**
- * Formats the expiry date of a lot
- * @param inventory - The inventory object
- * @returns The formatted expiry date
- */
-export function formatLotExpiry(inventory: InventoryRead) {
-  return inventory.product.expiration_date
-    ? formatDate(inventory.product.expiration_date, "MM/yyyy")
-    : "-";
+  return "primary";
 }

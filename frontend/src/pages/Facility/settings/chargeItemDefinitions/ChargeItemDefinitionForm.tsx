@@ -122,10 +122,7 @@ export function ChargeItemDefinitionForm({
     t: (key: string, options?: Record<string, unknown>) => string,
   ) =>
     z.object({
-      title: z
-        .string()
-        .trim()
-        .min(1, { message: t("title_is_required") }),
+      title: z.string().min(1, { message: t("title_is_required") }),
       slug_value: z
         .string()
         .trim()
@@ -140,7 +137,7 @@ export function ChargeItemDefinitionForm({
         }),
       category: z.string().min(1, { message: t("field_required") }),
       _categoryName: z.string().optional(),
-      status: z.enum(ChargeItemDefinitionStatus),
+      status: z.nativeEnum(ChargeItemDefinitionStatus),
       description: z.string().optional(),
       purpose: z.string().optional(),
       derived_from_uri: z
@@ -158,7 +155,7 @@ export function ChargeItemDefinitionForm({
       can_edit_charge_item: z.boolean(),
       price_components: z.array(
         z.object({
-          monetary_component_type: z.enum(MonetaryComponentType),
+          monetary_component_type: z.nativeEnum(MonetaryComponentType),
           code: CodeSchema.optional(),
           factor: zodDecimal({ min: 0, max: 100 }).optional().nullable(),
           amount: zodDecimal({ min: 0 }).optional().nullable(),

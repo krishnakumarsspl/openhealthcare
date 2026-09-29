@@ -25,11 +25,11 @@ import { PhoneInput } from "@/components/ui/phone-input";
 import { Textarea } from "@/components/ui/textarea";
 
 import LocationPicker from "@/components/Common/GeoLocationPicker";
-import GovtOrganizationPicker from "@/components/Organization/GovtOrganizationPicker";
 
 import mutate from "@/Utils/request/mutate";
 import query from "@/Utils/request/query";
 import validators from "@/Utils/validators";
+import GovtOrganizationSelector from "@/pages/Organization/components/GovtOrganizationSelector";
 import {
   FACILITY_FEATURE_TYPES,
   FACILITY_TYPES,
@@ -53,9 +53,7 @@ export default function FacilityForm({
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isGettingLocation, setIsGettingLocation] = useState(false);
-  const [selectedGeoOrg, setSelectedGeoOrg] = useState<Organization | null>(
-    null,
-  );
+  const [selectedLevels, setSelectedLevels] = useState<Organization[]>([]);
 
   const facilityFormSchema = z.object({
     facility_type: z.string().min(1, t("facility_type_required")),
@@ -103,16 +101,10 @@ export default function FacilityForm({
   });
 
   useEffect(() => {
-    if (!organizationId || facilityId) {
-      return;
-    }
-
-    const govtOrg = org && org.org_type === "govt" ? org : null;
-    const isValid = !!govtOrg && !govtOrg.has_children;
-
-    setSelectedGeoOrg(govtOrg);
-    form.setValue("geo_organization", isValid ? govtOrg?.id : "");
-  }, [org, organizationId, facilityId, form]);
+    const levels: Organization[] = [];
+    if (org && org.org_type === "govt") levels.push(org);
+    setSelectedLevels(levels);
+  }, [org, organizationId]);
 
   const { mutate: createFacility, isPending } = useMutation({
     mutationFn: mutate(facilityApi.create),
@@ -202,7 +194,7 @@ export default function FacilityForm({
   // Update form when facility data is loaded
   useEffect(() => {
     if (facilityData) {
-      setSelectedGeoOrg(facilityData.geo_organization);
+      setSelectedLevels([facilityData.geo_organization]);
       form.reset({
         facility_type: facilityData.facility_type,
         name: facilityData.name,
@@ -362,25 +354,20 @@ export default function FacilityForm({
             <FormField
               name="geo_organization"
               control={form.control}
-              render={({ field, fieldState }) => (
+              render={({ field }) => (
                 <FormItem className="md:col-span-2">
                   <FormControl>
                     <div className="grid-cols-1 grid md:grid-cols-2 gap-5">
-                      <GovtOrganizationPicker
-                        ref={field.ref}
-                        aria-invalid={!!fieldState.error}
+                      <GovtOrganizationSelector
+                        {...field}
+                        value={form.watch("geo_organization")}
+                        selected={selectedLevels}
+                        onChange={(value) =>
+                          form.setValue("geo_organization", value, {
+                            shouldDirty: true,
+                          })
+                        }
                         required
-                        value={selectedGeoOrg}
-                        onChange={(organization) => {
-                          setSelectedGeoOrg(organization);
-                          const isValid =
-                            !!organization && !organization.has_children;
-                          form.setValue(
-                            "geo_organization",
-                            isValid ? organization.id : "",
-                            { shouldDirty: true },
-                          );
-                        }}
                       />
                     </div>
                   </FormControl>

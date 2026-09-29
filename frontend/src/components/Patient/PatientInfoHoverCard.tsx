@@ -1,16 +1,15 @@
 import { Avatar } from "@/components/Common/Avatar";
 import { PatientAddressLink } from "@/components/Patient/PatientAddressLink";
-import { PatientAge } from "@/components/Patient/PatientAge";
 import { PatientTagsDisplay } from "@/components/Patient/PatientTagsDisplay";
 import { formatPatientAddress } from "@/components/Patient/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  getPatientIdentifiers,
   PatientListRead,
   PatientRead,
   PublicPatientRead,
 } from "@/types/emr/patient/patient";
+import { formatPatientAge } from "@/Utils/utils";
 import { Phone } from "lucide-react";
 import { Link, usePath } from "raviger";
 import { useTranslation } from "react-i18next";
@@ -46,7 +45,8 @@ export const PatientInfoHoverCard = ({
           <div className="flex flex-col">
             <h5 className="text-lg font-semibold">{patient.name}</h5>
             <span className="text-gray-700 text-sm font-medium">
-              <PatientAge patient={patient} />, {t(`GENDER__${patient.gender}`)}
+              {formatPatientAge(patient, true)},{" "}
+              {t(`GENDER__${patient.gender}`)}
             </span>
           </div>
         </div>
@@ -89,17 +89,20 @@ export const PatientInfoHoverCard = ({
       </div>
       <div className="flex flex-col gap-3">
         <div className="grid grid-cols-2 gap-3 border-t border-gray-200 pt-4">
-          {getPatientIdentifiers(patient).map((identifier) => (
-            <div
-              key={identifier.config.id}
-              className="flex flex-col gap-0.5 text-sm"
-            >
-              <span className="font-medium text-gray-700">
-                {identifier.config.config.display}:{" "}
-              </span>
-              <span className="font-semibold">{identifier.value}</span>
-            </div>
-          ))}
+          {"instance_identifiers" in patient &&
+            patient.instance_identifiers
+              ?.filter(({ config }) => !config.config.auto_maintained)
+              .map((identifier) => (
+                <div
+                  key={identifier.config.id}
+                  className="flex flex-col gap-0.5 text-sm"
+                >
+                  <span className="font-medium text-gray-700">
+                    {identifier.config.config.display}:{" "}
+                  </span>
+                  <span className="font-semibold">{identifier.value}</span>
+                </div>
+              ))}
           {patient.phone_number && (
             <div className="flex flex-col gap-1 text-sm font-medium">
               <span className="text-gray-700">{t("contact")}</span>

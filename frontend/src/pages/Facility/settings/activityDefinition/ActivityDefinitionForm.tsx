@@ -137,9 +137,9 @@ function ActivityDefinitionFormContent({
     description: z.string().min(1, t("field_required")),
     usage: z.string().min(1, t("field_required")),
     derived_from_uri: z.string().nullable(),
-    status: z.enum(Status),
-    classification: z.enum(Classification),
-    kind: z.enum(Kind),
+    status: z.nativeEnum(Status),
+    classification: z.nativeEnum(Classification),
+    kind: z.nativeEnum(Kind),
     healthcare_service: z.custom<HealthcareServiceReadSpec>().nullable(),
     code: CodeSchema,
     body_site: CodeSchema.nullable(),
@@ -223,14 +223,17 @@ function ActivityDefinitionFormContent({
   const { data: observationDefinitions, isLoading: isLoadingObservations } =
     useQuery({
       queryKey: ["observationDefinitions", facilityId, observationSearch],
-      queryFn: query.debounced(observationDefinitionApi.list, {
-        queryParams: {
-          facility: facilityId,
-          limit: 100,
-          title: observationSearch,
-          status: ObservationDefinitionStatus.ACTIVE,
+      queryFn: query.debounced(
+        observationDefinitionApi.listObservationDefinition,
+        {
+          queryParams: {
+            facility: facilityId,
+            limit: 100,
+            title: observationSearch,
+            status: ObservationDefinitionStatus.active,
+          },
         },
-      }),
+      ),
     });
 
   const form = useForm({

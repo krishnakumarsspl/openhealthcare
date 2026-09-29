@@ -38,7 +38,7 @@ export default {
   },
   updateServiceRequest: {
     path: "/api/v1/facility/{facilityId}/service_request/{serviceRequestId}/",
-    method: HttpMethod.PATCH,
+    method: HttpMethod.PUT,
     TRes: Type<ServiceRequestUpdateSpec>(),
   },
   applyActivityDefinition: {

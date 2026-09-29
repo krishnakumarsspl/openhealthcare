@@ -171,7 +171,7 @@ interface ActivityDefinitionListProps {
   setAllowCategoryCreate: (allow: boolean) => void;
 }
 
-export function ActivityDefinitionListContent({
+export function ActivityDefinitionList({
   facilityId,
   categorySlug,
   setAllowCategoryCreate,

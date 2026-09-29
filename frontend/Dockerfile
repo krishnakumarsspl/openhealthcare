@@ -15,6 +15,8 @@ COPY . .
 
 RUN npm run postinstall
 
+RUN npm run setup
+
 RUN npm run build
 
 

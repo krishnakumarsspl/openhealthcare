@@ -1,14 +1,7 @@
 import { ChargeItemRead } from "@/types/billing/chargeItem/chargeItem";
 import { DispenseOrderRead } from "@/types/emr/dispenseOrder/dispenseOrder";
-import {
-  EncounterListRead,
-  EncounterRead,
-} from "@/types/emr/encounter/encounter";
-import {
-  MedicationCategory,
-  MedicationRequestDosageInstruction,
-  MedicationRequestRead,
-} from "@/types/emr/medicationRequest/medicationRequest";
+import { EncounterRead } from "@/types/emr/encounter/encounter";
+import { MedicationRequestDosageInstruction } from "@/types/emr/medicationRequest/medicationRequest";
 import { InventoryRead } from "@/types/inventory/product/inventory";
 import { LocationRead } from "@/types/location/location";
 
@@ -23,23 +16,15 @@ export enum MedicationDispenseStatus {
   declined = "declined",
 }
 
-export const MEDICATION_DISPENSE_CANCELLED_STATUSES: MedicationDispenseStatus[] =
-  [
-    MedicationDispenseStatus.cancelled,
-    MedicationDispenseStatus.entered_in_error,
-    MedicationDispenseStatus.stopped,
-    MedicationDispenseStatus.declined,
-  ];
-
 export const MEDICATION_DISPENSE_STATUS_COLORS = {
   preparation: "blue",
   in_progress: "yellow",
   cancelled: "destructive",
   on_hold: "orange",
   completed: "green",
-  entered_in_error: "destructive",
+  entered_in_error: "secondary",
   stopped: "destructive",
-  declined: "destructive",
+  declined: "purple",
 } as const satisfies Record<MedicationDispenseStatus, string>;
 
 export enum MedicationDispenseNotPerformedReason {
@@ -51,6 +36,12 @@ export enum MedicationDispenseNotPerformedReason {
   sdupther = "sdupther",
   saig = "saig",
   preg = "preg",
+}
+
+export enum MedicationDispenseCategory {
+  inpatient = "inpatient",
+  outpatient = "outpatient",
+  community = "community",
 }
 
 export enum SubstitutionType {
@@ -174,7 +165,7 @@ export interface MedicationDispenseBase {
   id: string;
   status: MedicationDispenseStatus;
   not_performed_reason?: MedicationDispenseNotPerformedReason;
-  category: MedicationCategory;
+  category: MedicationDispenseCategory;
   when_prepared: Date;
   when_handed_over?: Date;
   note?: string;
@@ -199,8 +190,7 @@ export interface MedicationDispenseCreate extends Omit<
   quantity: string;
   days_supply?: string;
   fully_dispensed: boolean;
-  create_dispense_order?: MedicationDispenseOrderCreate;
-  order?: string;
+  create_dispense_order: MedicationDispenseOrderCreate;
 }
 
 export interface MedicationDispenseUpsert extends Omit<
@@ -212,16 +202,11 @@ export interface MedicationDispenseUpsert extends Omit<
 
 export interface MedicationDispenseRead extends MedicationDispenseBase {
   item: InventoryRead;
-  charge_item?: ChargeItemRead;
+  charge_item: ChargeItemRead;
   created_date: string;
   location: LocationRead;
   quantity: string;
   order: DispenseOrderRead;
-  authorizing_request: MedicationRequestRead | null;
-}
-
-export interface MedicationDispenseRetrieve extends MedicationDispenseRead {
-  encounter: EncounterListRead;
 }
 
 export interface MedicationDispenseSummary {

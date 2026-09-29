@@ -42,13 +42,13 @@ export const contactPointSchema = () =>
     // Email addresses
     z.object({
       system: z.literal("email"),
-      value: z.email(),
+      value: z.string().email(),
       use: z.enum(ContactPointUses),
     }),
     // URLs
     z.object({
       system: z.literal("url"),
-      value: z.url(),
+      value: z.string().url(),
       use: z.enum(ContactPointUses),
     }),
     // SMS (also using phone validation)

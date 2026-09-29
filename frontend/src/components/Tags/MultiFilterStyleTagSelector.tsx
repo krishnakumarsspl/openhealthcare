@@ -16,8 +16,6 @@ import { useTranslation } from "react-i18next";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
-import TagBadge from "@/components/Tags/TagBadge";
-import TagColorDot from "@/components/Tags/TagColorDot";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,7 +51,6 @@ interface MultiFilterStyleTagSelectorProps {
   disabled?: boolean;
   isTagMutationInProgress?: boolean;
   trigger?: React.ReactNode;
-  align?: "start" | "end";
 }
 
 // Clean, minimal tag selector matching multi-filter design
@@ -66,7 +63,6 @@ export function MultiFilterStyleTagSelector({
   disabled = false,
   isTagMutationInProgress = false,
   trigger,
-  align = "start",
 }: MultiFilterStyleTagSelectorProps) {
   const [open, setOpen] = useState(false);
   const [groupPopoverOpen, setGroupPopoverOpen] = useState<string | null>(null);
@@ -171,10 +167,7 @@ export function MultiFilterStyleTagSelector({
               <ArrowRight className="size-3 flex-shrink-0" />
             </span>
           )}
-          <TagColorDot
-            tag={tag}
-            fallbackColorClass="bg-blue-100 border-blue-300"
-          />
+          <div className="size-3 rounded-full flex-shrink-0 border bg-blue-100 border-blue-300"></div>
           <span className="truncate">{tag.display}</span>
         </span>
       </div>
@@ -248,12 +241,13 @@ export function MultiFilterStyleTagSelector({
             <span>{t("updating_tags")}</span>
           ) : selected.length > 0 ? (
             <div className="flex gap-1 flex-wrap min-w-0 w-full overflow-hidden">
-              {selected.slice(0, 3).map((tag) => (
-                <TagBadge
-                  key={tag.id}
-                  tag={tag}
+              {selected.slice(0, 3).map((t) => (
+                <Badge
+                  key={t.id}
                   className="bg-blue-100 text-blue-900 border-blue-300 whitespace-normal break-words overflow-wrap-anywhere"
-                />
+                >
+                  {t.display}
+                </Badge>
               ))}
               {selected.length > 3 && (
                 <Badge className="bg-gray-100 text-gray-900 border-gray-300 shrink-0">
@@ -387,10 +381,7 @@ export function MultiFilterStyleTagSelector({
                             className="size-4"
                           />
                           <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <TagColorDot
-                              tag={childTag}
-                              fallbackColorClass="bg-green-100 border-green-300"
-                            />
+                            <div className="size-3 rounded-full flex-shrink-0 border bg-green-100 border-green-300"></div>
                             <span className="text-sm truncate">
                               {childTag.display}
                             </span>
@@ -414,7 +405,7 @@ export function MultiFilterStyleTagSelector({
           <DropdownMenuTrigger asChild>{triggerButton}</DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-[calc(100vw)] max-w-[calc(100vw-3rem)] sm:max-w-xs p-0"
-            align={align}
+            align="start"
           >
             <div className="p-0">
               {/* Header */}
@@ -528,10 +519,7 @@ export function MultiFilterStyleTagSelector({
                                         className="size-4"
                                       />
                                       <div className="flex items-center gap-2 flex-1">
-                                        <TagColorDot
-                                          tag={childTag}
-                                          fallbackColorClass="bg-green-100 border-green-300"
-                                        />
+                                        <div className="size-3 rounded-full flex-shrink-0 border bg-green-100 border-green-300"></div>
                                         <span className="text-sm">
                                           {childTag.display}
                                         </span>

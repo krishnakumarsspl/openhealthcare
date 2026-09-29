@@ -22,7 +22,7 @@ import { DiagnosesHistory } from "./DiagnosesHistory";
 import { ResponsesHistory } from "./ResponsesHistory";
 import { SymptomsHistory } from "./SymptomsHistory";
 
-function ClinicalHistoryPage({
+export function ClinicalHistoryPage({
   patientId,
   facilityId,
   tab = "symptoms",

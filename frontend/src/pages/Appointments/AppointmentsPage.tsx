@@ -77,10 +77,14 @@ import {
 import scheduleApis from "@/types/scheduling/scheduleApi";
 import query from "@/Utils/request/query";
 import { useView } from "@/Utils/useView";
-import { dateQueryString, formatDateTime, goBack } from "@/Utils/utils";
+import {
+  dateQueryString,
+  formatDateTime,
+  formatPatientAge,
+  goBack,
+} from "@/Utils/utils";
 
 import { booleanFromString } from "@/common/utils";
-import { PatientAge } from "@/components/Patient/PatientAge";
 import { ScheduleResourceIcon } from "@/components/Schedule/ScheduleResourceIcon";
 import {
   dateFilter,
@@ -223,8 +227,6 @@ export default function AppointmentsPage({ resourceType, resourceId }: Props) {
   const practitioners = schedulableUserResources?.filter((r) =>
     practitionerIds.includes(r.id),
   );
-  const resourceIds =
-    resourceId ?? practitioners?.map((p) => p.id).join(",") ?? "";
 
   // Enabled only if filtered by a practitioner and a single day
   const slotsFilterEnabled =
@@ -234,20 +236,15 @@ export default function AppointmentsPage({ resourceType, resourceId }: Props) {
     (qParams.date_from === qParams.date_to || !qParams.date_to);
 
   const slotsQuery = useQuery({
-    queryKey: [
-      "slots",
-      facilityId,
-      resourceType,
-      resourceIds,
-      qParams.date_from,
-    ],
+    queryKey: ["slots", facilityId, qParams.practitioners, qParams.date_from],
     queryFn: query(scheduleApis.slots.getSlotsForDay, {
       pathParams: { facilityId },
       body: {
         // voluntarily coalesce to empty string since we know query would be
         // enabled only if practitioner and date_from are present
         resource_type: resourceType,
-        resource_id: resourceIds,
+        resource_id:
+          resourceId ?? practitioners?.map((p) => p.id).join(",") ?? "",
         day: qParams.date_from ?? "",
       },
     }),
@@ -734,7 +731,7 @@ function AppointmentCard({
             {patient.name}
           </h3>
           <p className="text-sm text-gray-700">
-            <PatientAge patient={patient} />, {t(`GENDER__${patient.gender}`)}
+            {formatPatientAge(patient, true)}, {t(`GENDER__${patient.gender}`)}
           </p>
           <p className="text-xs text-gray-500 mt-1">
             {formatDateTime(
@@ -961,7 +958,8 @@ function AppointmentRowItem({ appointment }: { appointment: Appointment }) {
           <span className="flex flex-col">
             <span className="text-sm font-semibold">{patient.name}</span>
             <span className="text-xs text-gray-500">
-              <PatientAge patient={patient} />, {t(`GENDER__${patient.gender}`)}
+              {formatPatientAge(patient, true)},{" "}
+              {t(`GENDER__${patient.gender}`)}
             </span>
           </span>
         </span>

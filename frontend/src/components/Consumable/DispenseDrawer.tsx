@@ -12,12 +12,14 @@ import { z } from "zod";
 import { CaretSortIcon } from "@radix-ui/react-icons";
 
 import useCurrentFacility from "@/pages/Facility/utils/useCurrentFacility";
+import batchApi from "@/types/base/batch/batchApi";
 import {
   ChargeItemBatchResponse,
   ChargeItemRead,
   extractChargeItemsFromBatchResponse,
 } from "@/types/billing/chargeItem/chargeItem";
 import {
+  MedicationDispenseCategory,
   MedicationDispenseCreate,
   MedicationDispenseStatus,
 } from "@/types/emr/medicationDispense/medicationDispense";
@@ -25,7 +27,6 @@ import { InventoryRead } from "@/types/inventory/product/inventory";
 import inventoryApi from "@/types/inventory/product/inventoryApi";
 import { ProductKnowledgeBase } from "@/types/inventory/productKnowledge/productKnowledge";
 import { LocationRead } from "@/types/location/location";
-import { BatchRequestObject, useBatchRequest } from "@/Utils/request/batch";
 import mutate from "@/Utils/request/mutate";
 import query from "@/Utils/request/query";
 
@@ -76,8 +77,6 @@ import {
   extractDispenseOrderFromBatchResponse,
 } from "@/types/emr/dispenseOrder/dispenseOrder";
 import dispenseOrderApi from "@/types/emr/dispenseOrder/dispenseOrderApi";
-import medicationDispenseApi from "@/types/emr/medicationDispense/medicationDispenseApi";
-import { MedicationCategory } from "@/types/emr/medicationRequest/medicationRequest";
 import {
   isGreaterThan,
   isLessThanOrEqual,
@@ -117,7 +116,7 @@ const createFormSchema = () =>
   z.object({
     items: z.array(
       z.object({
-        reference_id: z.uuid(),
+        reference_id: z.string().uuid(),
         productKnowledge: z.any(),
         quantity: zodDecimal({ min: 1 }),
         lots: z.array(
@@ -244,7 +243,9 @@ export default function DispenseDrawer({
         inventories?.length &&
         !currentLots.some((lot) => lot.selectedInventoryId)
       ) {
-        const validLot = inventories.find(isLotAllowedForDispensing);
+        const validLot = inventories.find((inv) =>
+          isLotAllowedForDispensing(inv.product.expiration_date),
+        );
 
         if (validLot) {
           form.setValue(`items.${index}.lots`, [
@@ -271,7 +272,8 @@ export default function DispenseDrawer({
       })({ status }),
   });
 
-  const { mutate: dispense, isPending } = useBatchRequest({
+  const { mutate: dispense, isPending } = useMutation({
+    mutationFn: mutate(batchApi.batchRequest),
     onSuccess: (response) => {
       toast.success(t("items_dispensed_successfully"));
       queryClient.invalidateQueries({
@@ -434,7 +436,12 @@ export default function DispenseDrawer({
 
   const createDispenseRequests = useCallback(
     (items: FormItemType[]) => {
-      const requests: BatchRequestObject<MedicationDispenseCreate>[] = [];
+      const requests: Array<{
+        url: string;
+        method: string;
+        reference_id: string;
+        body: MedicationDispenseCreate;
+      }> = [];
 
       items.forEach((item) => {
         const productKnowledge = item.productKnowledge;
@@ -457,7 +464,7 @@ export default function DispenseDrawer({
 
           const dispenseData: MedicationDispenseCreate = {
             status: MedicationDispenseStatus.completed,
-            category: MedicationCategory.outpatient,
+            category: MedicationDispenseCategory.outpatient,
             when_prepared: new Date(),
             dosage_instruction: [],
             encounter: encounterId,
@@ -473,8 +480,9 @@ export default function DispenseDrawer({
           };
 
           requests.push({
-            api: medicationDispenseApi.create,
-            referenceId: `dispense_${item.reference_id}_lot_${lot.selectedInventoryId}`,
+            url: `/api/v1/medication/dispense/`,
+            method: "POST",
+            reference_id: `dispense_${item.reference_id}_lot_${lot.selectedInventoryId}`,
             body: dispenseData,
           });
         });
@@ -503,7 +511,7 @@ export default function DispenseDrawer({
       return;
     }
 
-    dispense(requests);
+    dispense({ requests });
   }, [form, validateFormWithToasts, createDispenseRequests, dispense, t]);
 
   const watchedItems = useWatch({

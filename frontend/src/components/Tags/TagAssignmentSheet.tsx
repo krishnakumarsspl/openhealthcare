@@ -12,7 +12,6 @@ import prescriptionApi from "@/types/emr/prescription/prescriptionApi";
 import serviceRequestApi from "@/types/emr/serviceRequest/serviceRequestApi";
 import { TagConfig, TagResource } from "@/types/emr/tagConfig/tagConfig";
 import deliveryOrderApi from "@/types/inventory/deliveryOrder/deliveryOrderApi";
-import locationApi from "@/types/location/locationApi";
 import scheduleApis from "@/types/scheduling/scheduleApi";
 
 import requestOrderApi from "@/types/inventory/requestOrder/requestOrderApi";
@@ -31,8 +30,7 @@ export type TagEntityType =
   | "delivery_order"
   | "request_order"
   | "account"
-  | "charge_item_definition"
-  | "location";
+  | "charge_item_definition";
 
 // Mapping from entity types to tag resources
 const ENTITY_TO_RESOURCE_MAP = {
@@ -45,7 +43,6 @@ const ENTITY_TO_RESOURCE_MAP = {
   request_order: TagResource.REQUEST_ORDER,
   account: TagResource.ACCOUNT,
   charge_item_definition: TagResource.CHARGE_ITEM_DEFINITION,
-  location: TagResource.LOCATION,
 } as const;
 
 // Configuration for different entity types using their respective API files
@@ -97,11 +94,6 @@ const ENTITY_CONFIG = {
     setTagsApi: chargeItemDefinitionApi.setTags,
     removeTagsApi: chargeItemDefinitionApi.removeTags,
     displayName: "charge_item_definition",
-  },
-  location: {
-    setTagsApi: locationApi.setTags,
-    removeTagsApi: locationApi.removeTags,
-    displayName: "location",
   },
   // TODO: Add more entity configurations here
 

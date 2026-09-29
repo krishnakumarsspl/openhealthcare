@@ -37,7 +37,7 @@ import dayjs from "dayjs";
 const createQueueFormSchema = z.object({
   name: z.string().trim().min(1, "Queue name is required"),
   date: z.date({
-    error: "Date is required",
+    required_error: "Date is required",
   }),
 });
 

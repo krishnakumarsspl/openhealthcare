@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/lib/utils";
-import careConfig from "@careConfig";
 
 import {
   Breadcrumb,
@@ -51,7 +50,6 @@ import {
 } from "@/types/inventory/productKnowledge/productKnowledge";
 import productKnowledgeApi from "@/types/inventory/productKnowledge/productKnowledgeApi";
 import query from "@/Utils/request/query";
-import { isIOSDevice } from "@/Utils/utils";
 
 interface Props {
   onSelect: (value: Code) => void;
@@ -81,9 +79,7 @@ export default function MedicationValueSetSelect({
   const { t } = useTranslation();
   const { facilityId } = useCurrentFacilitySilently();
   const [open, setOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<TabType>(
-    careConfig.medicationValueSetSelectDefaultTab,
-  );
+  const [activeTab, setActiveTab] = useState<TabType>("product");
   const [search, setSearch] = useState("");
   const isMobile = useBreakpoints({ default: true, sm: false });
 
@@ -504,7 +500,7 @@ export function MedicationValueSetSelectTabContent({
                 onValueChange={onSearchChange}
                 value={search}
                 className="border-none ring-0 text-base sm:text-sm"
-                autoFocus={!isIOSDevice}
+                autoFocus
               />
             </div>
 

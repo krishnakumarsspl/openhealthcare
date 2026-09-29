@@ -38,12 +38,12 @@ import query from "@/Utils/request/query";
 
 const createSubQueueFormSchema = z.object({
   name: z.string().trim().min(1, "Service point name is required"),
-  status: z.enum(TokenSubQueueStatus),
+  status: z.nativeEnum(TokenSubQueueStatus),
 });
 
 const editSubQueueFormSchema = z.object({
   name: z.string().trim().min(1, "Service point name is required"),
-  status: z.enum(TokenSubQueueStatus),
+  status: z.nativeEnum(TokenSubQueueStatus),
 });
 
 type CreateSubQueueFormData = z.infer<typeof createSubQueueFormSchema>;

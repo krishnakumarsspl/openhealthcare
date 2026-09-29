@@ -27,7 +27,6 @@ import {
   PaymentReconciliationStatus,
 } from "@/types/billing/paymentReconciliation/paymentReconciliation";
 import paymentReconciliationApi from "@/types/billing/paymentReconciliation/paymentReconciliationApi";
-import { getPatientIdentifiers } from "@/types/emr/patient/patient";
 import { PrintTemplateType } from "@/types/facility/printTemplate";
 import { PatientIdentifierUse } from "@/types/patient/patientIdentifierConfig/patientIdentifierConfig";
 import query from "@/Utils/request/query";
@@ -74,7 +73,7 @@ const DetailRow = ({
   );
 };
 
-function PrintPaymentReconciliation({
+export function PrintPaymentReconciliation({
   facilityId,
   paymentReconciliationId,
 }: PrintPaymentReconciliationProps) {
@@ -163,17 +162,20 @@ function PrintPaymentReconciliation({
                 value={payment.id}
                 width="w-24"
               />
-              {getPatientIdentifiers(payment.account.patient, {
-                use: PatientIdentifierUse.official,
-              }).map((identifier) => (
-                <DetailRow
-                  key={identifier.config.id}
-                  label={identifier.config.config.display}
-                  value={identifier.value}
-                  width="w-24"
-                  isStrong
-                />
-              ))}
+              {payment.account.patient?.instance_identifiers
+                ?.filter(
+                  ({ config }) =>
+                    config.config.use === PatientIdentifierUse.official,
+                )
+                .map((identifier) => (
+                  <DetailRow
+                    key={identifier.config.id}
+                    label={identifier.config.config.display}
+                    value={identifier.value}
+                    width="w-24"
+                    isStrong
+                  />
+                ))}
               <DetailRow
                 label={t("payment_method")}
                 value={PAYMENT_RECONCILIATION_METHOD_MAP[payment.method]}

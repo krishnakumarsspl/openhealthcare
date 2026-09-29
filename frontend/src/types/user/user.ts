@@ -5,7 +5,11 @@ import { FacilityBareMinimum } from "@/types/facility/facility";
 import { Organization } from "@/types/organization/organization";
 
 export type UserType =
-  "doctor" | "nurse" | "staff" | "volunteer" | "administrator";
+  | "doctor"
+  | "nurse"
+  | "staff"
+  | "volunteer"
+  | "administrator";
 
 export interface UserBase {
   id: string;

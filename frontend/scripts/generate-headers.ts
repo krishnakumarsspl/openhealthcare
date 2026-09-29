@@ -1,12 +1,8 @@
 import { writeFile } from "fs/promises";
 import path from "path";
 
-import dotenv from "dotenv";
-
-dotenv.config({ path: path.resolve(__dirname, "..", ".env") });
-
 const headers = process.env.HEADERS;
-const header_folder = path.join(__dirname, "..", "build");
+const header_folder = path.join(__dirname, "..", "public");
 
 async function writeHeaders() {
   if (!headers) {

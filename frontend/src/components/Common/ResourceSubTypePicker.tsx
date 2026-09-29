@@ -223,3 +223,5 @@ export function ResourceSubTypePicker({
     </div>
   );
 }
+
+export default ResourceSubTypePicker;

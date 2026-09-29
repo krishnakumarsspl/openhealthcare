@@ -1,6 +1,5 @@
 import { useState } from "react";
 
-import { LocationAssociationStatus } from "@/types/location/association";
 import { LocationRead } from "@/types/location/location";
 
 export function useLocationDialogs() {
@@ -12,7 +11,7 @@ export function useLocationDialogs() {
   const [locationToDelete, setLocationToDelete] = useState<{
     locationId: string;
     associationId: string;
-    status: LocationAssociationStatus;
+    status: "active" | "planned";
   } | null>(null);
 
   const openDischargeDialog = (bed: LocationRead) => {
@@ -36,7 +35,7 @@ export function useLocationDialogs() {
   const openDeleteDialog = (
     locationId: string,
     associationId: string,
-    status: LocationAssociationStatus,
+    status: "active" | "planned",
   ) => {
     setLocationToDelete({ locationId, associationId, status });
     setShowDeleteDialog(true);

@@ -5,64 +5,58 @@ import {
 
 import { LocationActionButtons } from "@/components/Location/LocationActionButtons";
 import { LocationCardWrapper } from "@/components/Location/LocationCardWrapper";
-import { AssignmentHandlers } from "@/components/Location/utils/locationHelpers";
+import { EditingState } from "@/components/Location/utils/locationHelpers";
 import { useTranslation } from "react-i18next";
 
 interface CurrentLocationsListProps {
   currentLocation?: LocationAssociationRead;
-  plannedLocations?: LocationAssociationRead[];
-  handlers: Pick<
-    AssignmentHandlers,
-    | "editingState"
-    | "setEditingState"
-    | "isPending"
-    | "onMove"
-    | "onComplete"
-    | "onUpdateTime"
-    | "onCancelBed"
-    | "onCancelEdit"
-    | "onConfirmEdit"
-    | "onAssignNowPlanned"
-    | "onAssignNowReserved"
-    | "onAddBed"
-  >;
+  plannedLocations: LocationAssociationRead[];
+  editingState: EditingState;
+  setEditingState: React.Dispatch<React.SetStateAction<EditingState>>;
+  isPending: boolean;
   showMoveButton: boolean;
   keepBedActive?: boolean;
   onKeepBedActiveChange?: (value: boolean) => void;
-  reservedLocations?: LocationAssociationRead[];
+  onMove: () => void;
+  onComplete: (location: LocationAssociationRead) => void;
+  onUpdateTime: (location: LocationAssociationRead) => void;
+  onCancel: (
+    status: "active" | "planned",
+    location: LocationAssociationRead,
+  ) => void;
+  onAssignNow: (location: LocationAssociationRead) => void;
+  onCancelEdit: () => void;
+  onConfirmEdit: (location: LocationAssociationRead) => void;
+  linkedLocations?: LocationAssociationRead[];
 }
 
 export function CurrentLocationsList({
   currentLocation,
   plannedLocations,
-  handlers,
+  editingState,
+  setEditingState,
+  isPending,
   showMoveButton,
   keepBedActive,
   onKeepBedActiveChange,
-  reservedLocations,
+  onMove,
+  onComplete,
+  onUpdateTime,
+  onCancel,
+  onAssignNow,
+  onCancelEdit,
+  onConfirmEdit,
+  linkedLocations,
 }: CurrentLocationsListProps) {
   const { t } = useTranslation();
-  const {
-    editingState,
-    setEditingState,
-    isPending,
-    onMove,
-    onComplete,
-    onUpdateTime,
-    onCancelBed,
-    onCancelEdit,
-    onConfirmEdit,
-    onAssignNowPlanned,
-    onAssignNowReserved,
-    onAddBed,
-  } = handlers;
   const renderLocationCard = (
-    location: LocationAssociationRead,
+    locationHistory: LocationAssociationRead,
     status: LocationAssociationStatus,
+    areLinkedLocations?: boolean,
   ) => (
     <LocationCardWrapper
-      key={location.id}
-      location={location}
+      key={locationHistory.id}
+      locationHistory={locationHistory}
       status={status}
       editingState={editingState}
       setEditingState={setEditingState}
@@ -73,28 +67,28 @@ export function CurrentLocationsList({
       onKeepBedActiveChange={
         status === "active" ? onKeepBedActiveChange : undefined
       }
+      areLinkedLocations={areLinkedLocations}
       onComplete={status === "active" ? onComplete : undefined}
     >
       {showMoveButton && (
         <div className="flex justify-end gap-2">
           <LocationActionButtons
             status={status}
-            location={location}
+            location={locationHistory}
             onMove={onMove}
-            onAddBed={onAddBed}
             onComplete={
               status === "active" || status === "reserved"
                 ? onComplete
                 : undefined
             }
             onUpdateTime={onUpdateTime}
-            onCancelBed={() => onCancelBed(status, location)}
+            onCancel={() =>
+              onCancel(status as "planned" | "active", locationHistory)
+            }
             onAssignNow={
-              status === "reserved"
-                ? () => onAssignNowReserved(location)
-                : status === "planned"
-                  ? () => onAssignNowPlanned(location)
-                  : undefined
+              status === "planned"
+                ? () => onAssignNow(locationHistory)
+                : undefined
             }
           />
         </div>
@@ -105,18 +99,17 @@ export function CurrentLocationsList({
   return (
     <>
       {currentLocation && renderLocationCard(currentLocation, "active")}
-      {reservedLocations && reservedLocations.length > 0 && (
+      {linkedLocations && linkedLocations.length > 0 && (
         <>
           <h3 className="text-base font-semibold">{t("linked_locations")}</h3>
-          {reservedLocations.map((location) =>
-            renderLocationCard(location, location.status),
+          {linkedLocations.map((location) =>
+            renderLocationCard(location, location.status, true),
           )}
         </>
       )}
-      {plannedLocations &&
-        plannedLocations.map((location) =>
-          renderLocationCard(location, "planned"),
-        )}
+      {plannedLocations.map((location) =>
+        renderLocationCard(location, "planned"),
+      )}
     </>
   );
 }

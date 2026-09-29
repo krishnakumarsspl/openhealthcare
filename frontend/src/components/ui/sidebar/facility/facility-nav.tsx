@@ -29,7 +29,6 @@ function generateFacilityLinks(
     canCreateEncounter: boolean;
     canReadEncounter: boolean;
     canListTokenCategories: boolean;
-    canReadPatientIdentifierConfig: boolean;
     canListTemplate: boolean;
   },
   pluginLinks: NavigationLink[],
@@ -185,11 +184,10 @@ function generateFacilityLinks(
           url: `${baseUrl}/settings/token_category`,
           visibility: permissions.canListTokenCategories,
         },
-        {
-          name: t("patient_identifier_config"),
-          url: `${baseUrl}/settings/patient_identifier_config`,
-          visibility: permissions.canReadPatientIdentifierConfig,
-        },
+        // {
+        //   name: t("patient_identifier_config"),
+        //   url: `${baseUrl}/settings/patient_identifier_config`,
+        // },
         {
           name: t("tag_config"),
           url: `${baseUrl}/settings/tag_config`,
@@ -233,7 +231,6 @@ export function FacilityNav({ selectedFacility }: FacilityNavProps) {
     canCreateEncounter,
     canReadEncounter,
     canListTokenCategories,
-    canReadPatientIdentifierConfig,
     canListTemplate,
   } = getPermissions(hasPermission, facility?.permissions ?? []);
   const permissions = {
@@ -243,7 +240,6 @@ export function FacilityNav({ selectedFacility }: FacilityNavProps) {
     canCreateEncounter,
     canReadEncounter,
     canListTokenCategories,
-    canReadPatientIdentifierConfig,
     canListTemplate,
   };
   return (

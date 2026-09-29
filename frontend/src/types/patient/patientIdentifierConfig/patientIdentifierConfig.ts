@@ -69,3 +69,11 @@ export interface PatientIdentifierConfigBatchResponse {
     data?: { patient_identifier_config: PatientIdentifierConfig };
   }[];
 }
+
+export function extractPatientIdentifierConfigsFromBatchResponse(
+  response: PatientIdentifierConfigBatchResponse,
+): PatientIdentifierConfig[] {
+  return response.results
+    .map((item) => item.data?.patient_identifier_config)
+    .filter((item): item is PatientIdentifierConfig => !!item);
+}

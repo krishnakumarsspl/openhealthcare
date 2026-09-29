@@ -177,7 +177,8 @@ export default function DeliveryOrderForm({
     schemaType: "write",
     form,
     existingData: existingData?.extensions as
-      Record<string, Record<string, unknown>> | undefined,
+      | Record<string, Record<string, unknown>>
+      | undefined,
   });
 
   useEffect(() => {

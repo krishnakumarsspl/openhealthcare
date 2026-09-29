@@ -60,18 +60,17 @@ REACT_CARE_API_URL=http://127.0.0.1:9000
 
 Once you have the local backend running and loaded dummy data, you can use the following credentials to authenticate:
 
-| Role | Username | Password |
-| :--- | :--- | :--- |
-| **Superuser** | `admin` | `admin` |
-| **Doctor** | `care-doctor` | `Ohcn@123` |
-| **Staff** | `care-staff` | `Ohcn@123` |
-| **Nurse** | `care-nurse` | `Ohcn@123` |
-| **Administrator** | `care-admin` | `Ohcn@123` |
-| **Volunteer** | `care-volunteer` | `Ohcn@123` |
-| **Facility Admin** | `care-fac-admin` | `Ohcn@123` |
-| **Admin** | `care-role-admin` | `Ohcn@123` |
-| **Manager** | `care-role-manager` | `Ohcn@123` |
-| **Member** | `care-role-member` | `Ohcn@123` |
+```yaml
+# Default Local Backend Credentials
+ROLE            USERNAME                PASSWORD
+----------------------------------------------------------------
+Volunteer       volunteer_2_0           Coronasafe@123
+Doctor          doctor_2_0              Coronasafe@123
+Staff           staff_2_0               Coronasafe@123
+Nurse           nurse_2_0               Coronasafe@123
+Administrator   administrator_2_0       Coronasafe@123
+Facility Admin  facility_admin_2_0      Coronasafe@123
+```
 
 ## Multitenancy for Development
 
@@ -89,7 +88,7 @@ REACT_CARE_API_URL=https://careapi.ohc.network
 
 **Set up Nginx reverse proxy:**
 
-#### On macOS
+### On macOS
 
 We'll use [Homebrew](https://brew.sh/) to fetch most of the packages on macOS:
 
@@ -98,15 +97,11 @@ We'll use [Homebrew](https://brew.sh/) to fetch most of the packages on macOS:
 **Important**: Make sure that you start Nginx after you install them. Instructions on how to do that will
 be printed to the command-line after it's successfully installed.
 
-#### On Ubuntu
+### On Ubuntu
 
 The following command should install the required dependencies on Ubuntu. If you're using another _flavour_ of Linux, adapt the command to work with the package manager available with your distribution.
 
-```sh
-sudo apt-get install nginx
-```
-
-#### Configure Nginx (both macOS and Ubuntu)
+    sudo apt-get install nginx
 
 1. Create a new Nginx server configuration file...
    - `/opt/homebrew/etc/nginx/servers/care` (macOS)
@@ -114,7 +109,7 @@ sudo apt-get install nginx
 
    ...and save the following configuration inside it:
 
-   ```nginx
+   ```
    server {
      listen 80;
      server_name care.localhost develop.localhost dev.localhost plugs.localhost;
@@ -270,3 +265,4 @@ The build is minified and the filenames include the hashes.
 <a href="https://digitalpublicgoods.net/r/care" target="_blank" rel="noopener noreferrer"><img src="https://github.com/DPGAlliance/dpg-resources/blob/main/docs/assets/dpg-badge.png?raw=true" width="100" alt="Digital Public Goods Badge"></a>
 
 </div>
+# sspl_openhealthcare

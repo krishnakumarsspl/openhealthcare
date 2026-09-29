@@ -23,7 +23,6 @@ import { TimelineWrapper } from "@/components/Common/TimelineWrapper";
 import { EmptyState } from "@/components/ui/empty-state";
 import { usePermissions } from "@/context/PermissionContext";
 import { useShortcutSubContext } from "@/context/ShortcutContext";
-import { useCurrentFacilitySilently } from "@/pages/Facility/utils/useCurrentFacility";
 import encounterApi from "@/types/emr/encounter/encounterApi";
 import { CaptionsOff, PlusIcon } from "lucide-react";
 
@@ -39,16 +38,6 @@ const EncounterHistory = (props: PatientProps) => {
   const { canViewPatients } = getPermissions(
     hasPermission,
     patientData.permissions,
-  );
-
-  // "can_create_encounter" has the ENCOUNTER permission context, and the
-  // patient response only carries PATIENT and FACILITY context permissions.
-  // The facility permissions are the correct source, as in the other
-  // encounter creation entry points.
-  const { facility } = useCurrentFacilitySilently();
-  const { canCreateEncounter } = getPermissions(
-    hasPermission,
-    facility?.permissions ?? [],
   );
 
   const { data: encounterData, isLoading } = useQuery({
@@ -90,20 +79,18 @@ const EncounterHistory = (props: PatientProps) => {
                     description={t("create_a_new_encounter_to_get_started")}
                     icon={<CaptionsOff className="size-5 text-primary m-1" />}
                     action={
-                      canCreateEncounter ? (
-                        <CreateEncounterForm
-                          facilityId={facilityId}
-                          patientId={patientId}
-                          patientName={patientData.name}
-                          trigger={
-                            <Button>
-                              <PlusIcon />
-                              {t("create_encounter")}
-                              <ShortcutBadge actionId="create-encounter" />
-                            </Button>
-                          }
-                        />
-                      ) : undefined
+                      <CreateEncounterForm
+                        facilityId={facilityId}
+                        patientId={patientId}
+                        patientName={patientData.name}
+                        trigger={
+                          <Button>
+                            <PlusIcon />
+                            {t("create_encounter")}
+                            <ShortcutBadge actionId="create-encounter" />
+                          </Button>
+                        }
+                      />
                     }
                   />
                 </div>

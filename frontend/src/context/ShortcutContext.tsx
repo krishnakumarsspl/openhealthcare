@@ -123,6 +123,7 @@ export function ShortcutProvider({
   // Set up facility shortcuts
   useKeyboardShortcuts(
     ["global", ...expandShortcutContext(subContext || "")],
+    { canCreate: true },
     handlers,
     subContext,
     ignoreInputFields,

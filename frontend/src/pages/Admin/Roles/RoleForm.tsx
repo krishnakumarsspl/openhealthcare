@@ -38,6 +38,7 @@ interface RoleFormProps {
   role: RoleRead | null;
   onSuccess: () => void;
 }
+const PAGE_LIMIT = 100;
 export default function RoleForm({ role, onSuccess }: RoleFormProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -48,7 +49,7 @@ export default function RoleForm({ role, onSuccess }: RoleFormProps) {
     name: z.string().trim().min(1, t("field_required")),
     description: z.string().optional(),
     contexts: z
-      .array(z.enum(RoleContext))
+      .array(z.nativeEnum(RoleContext))
       .min(1, t("at_least_one_context_required")),
     permissions: z
       .array(z.string())
@@ -80,6 +81,7 @@ export default function RoleForm({ role, onSuccess }: RoleFormProps) {
       queryParams: {
         name: searchPermission,
       },
+      pageSize: PAGE_LIMIT,
     }),
   });
 

@@ -31,7 +31,7 @@ import queryClient from "@/Utils/request/queryClient";
 
 type DuoToneIconName = keyof typeof duoToneIcons;
 
-export default function SettingsHealthcareServiceShow({
+export default function HealthcareServiceShow({
   facilityId,
   healthcareServiceId,
 }: {

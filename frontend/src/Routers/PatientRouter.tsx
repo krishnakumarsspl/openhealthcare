@@ -15,7 +15,7 @@ import useSidebarState from "@/hooks/useSidebarState";
 import PatientUserProvider from "@/Providers/PatientUserProvider";
 import { FacilitiesPage } from "@/pages/Facility/FacilitiesPage";
 import PatientIndex from "@/pages/Patient/index";
-import PublicPatientRegistration from "@/pages/PublicAppointments/PatientRegistration";
+import { PatientRegistration } from "@/pages/PublicAppointments/PatientRegistration";
 import PatientSelect from "@/pages/PublicAppointments/PatientSelect";
 import { ScheduleAppointment } from "@/pages/PublicAppointments/Schedule";
 import { AppointmentSuccess } from "@/pages/PublicAppointments/Success";
@@ -78,7 +78,7 @@ const AppointmentRoutes = {
   }: {
     facilityId: string;
     staffId: string;
-  }) => <PublicPatientRegistration facilityId={facilityId} staffId={staffId} />,
+  }) => <PatientRegistration facilityId={facilityId} staffId={staffId} />,
 };
 
 export default function PatientRouter() {

@@ -88,15 +88,15 @@ export default function CreateScheduleTemplateSheet({
     .object({
       name: z.string().trim().min(1, t("field_required")),
       valid_from: z
-        .date({ error: t("field_required") })
+        .date({ required_error: t("field_required") })
         .min(dayjs().startOf("day").toDate(), {
           message: t("schedule_creation_for_past_validation_error"),
         }),
-      valid_to: z.date({ error: t("field_required") }),
+      valid_to: z.date({ required_error: t("field_required") }),
       is_public: z.boolean(),
 
       weekdays: z
-        .array(z.number() as unknown as z.ZodType<DayOfWeek, DayOfWeek>)
+        .array(z.number() as unknown as z.ZodType<DayOfWeek>)
         .min(1, t("schedule_weekdays_min_error")),
       availabilities: z
         .array(
@@ -108,17 +108,11 @@ export default function CreateScheduleTemplateSheet({
                 name: z.string().trim().min(1, t("field_required")),
                 reason: z.string().trim(),
                 start_time: z
-                  .string({ error: t("field_required") })
-                  .min(1, t("field_required")) as z.ZodType<
-                  Time | undefined,
-                  Time | undefined
-                >,
+                  .string({ required_error: t("field_required") })
+                  .min(1, t("field_required")) as z.ZodType<Time | undefined>,
                 end_time: z
-                  .string({ error: t("field_required") })
-                  .min(1, t("field_required")) as z.ZodType<
-                  Time | undefined,
-                  Time | undefined
-                >,
+                  .string({ required_error: t("field_required") })
+                  .min(1, t("field_required")) as z.ZodType<Time | undefined>,
                 slot_size_in_minutes: z
                   .union([
                     z.number().min(1, t("number_min_error", { min: 1 })),
@@ -151,17 +145,11 @@ export default function CreateScheduleTemplateSheet({
                 name: z.string().trim().min(1, t("field_required")),
                 reason: z.string().trim(),
                 start_time: z
-                  .string({ error: t("field_required") })
-                  .min(1, t("field_required")) as unknown as z.ZodType<
-                  Time,
-                  Time
-                >,
+                  .string({ required_error: t("field_required") })
+                  .min(1, t("field_required")) as unknown as z.ZodType<Time>,
                 end_time: z
-                  .string({ error: t("field_required") })
-                  .min(1, t("field_required")) as unknown as z.ZodType<
-                  Time,
-                  Time
-                >,
+                  .string({ required_error: t("field_required") })
+                  .min(1, t("field_required")) as unknown as z.ZodType<Time>,
                 slot_size_in_minutes: z.literal(null),
                 tokens_per_slot: z.literal(null),
               }),

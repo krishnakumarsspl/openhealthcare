@@ -31,7 +31,7 @@ export default function useMultiFilterState(
           filterValues[filter.key] = [queryValue];
         } else if (typeof queryValue === "object") {
           filterValues[filter.key] = queryValue as FilterValues;
-        } else {
+        } else if (queryValue !== null && queryValue !== undefined) {
           filterValues[filter.key] = [String(queryValue)];
         }
       }

@@ -1,7 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { navigate, useNavigationPrompt, useQueryParams } from "raviger";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -21,8 +20,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-import GovtOrganizationPicker from "@/components/Organization/GovtOrganizationPicker";
-
 import { usePatientContext } from "@/hooks/usePatientUser";
 
 import { GENDERS, GENDER_TYPES } from "@/common/constants";
@@ -32,9 +29,9 @@ import { usePubSub } from "@/Utils/pubsubContext";
 import mutate from "@/Utils/request/mutate";
 import { dateQueryString } from "@/Utils/utils";
 import validators from "@/Utils/validators";
+import GovtOrganizationSelector from "@/pages/Organization/components/GovtOrganizationSelector";
 import { PublicPatientRead } from "@/types/emr/patient/patient";
 import publicPatientApi from "@/types/emr/patient/publicPatientApi";
-import { Organization } from "@/types/organization/organization";
 import PublicAppointmentApi from "@/types/scheduling/PublicAppointmentApi";
 import { PublicAppointment } from "@/types/scheduling/schedule";
 
@@ -43,9 +40,7 @@ type PatientRegistrationProps = {
   staffId: string;
 };
 
-export default function PublicPatientRegistration(
-  props: PatientRegistrationProps,
-) {
+export function PatientRegistration(props: PatientRegistrationProps) {
   const { staffId } = props;
   const { t } = useTranslation();
   const [{ slotId, reason }] = useQueryParams();
@@ -57,17 +52,14 @@ export default function PublicPatientRegistration(
   const patientUserContext = usePatientContext();
   const tokenData = patientUserContext?.tokenData;
 
-  const [selectedGeoOrg, setSelectedGeoOrg] = useState<Organization | null>(
-    null,
-  );
-
   const patientSchema = z
     .object({
       name: z
         .string()
         .min(1, t("field_required"))
         .refine(validateName, t("min_char_length_error", { min_length: 3 })),
-      gender: z.enum(GENDERS, { error: t("gender_is_required") }),
+      test_field: z.string().optional(),
+      gender: z.enum(GENDERS, { required_error: t("gender_is_required") }),
       address: z.string().min(1, t("field_required")),
       age: z.string().optional(),
       date_of_birth: z.date().or(z.string()).optional(),
@@ -79,7 +71,7 @@ export default function PublicPatientRegistration(
       const field = data.ageInputType === "age" ? "age" : "date_of_birth";
       if (!data[field]) {
         ctx.addIssue({
-          code: "custom",
+          code: z.ZodIssueCode.custom,
           message: t("field_required"),
           path: [field],
         });
@@ -92,7 +84,7 @@ export default function PublicPatientRegistration(
         Number(data.age) < 0
       ) {
         ctx.addIssue({
-          code: "custom",
+          code: z.ZodIssueCode.custom,
           message: t("age_less_than_0"),
           path: ["age"],
         });
@@ -107,6 +99,7 @@ export default function PublicPatientRegistration(
       name: "",
       ageInputType: "date_of_birth",
       address: "",
+      test_field: "",
     },
   });
 
@@ -199,7 +192,7 @@ export default function PublicPatientRegistration(
         <form onSubmit={onSubmit} className="mx-auto space-y-6">
           <div className="container mx-auto p-4 max-w-3xl">
             <h2 className="text-xl font-semibold">
-              {t("patient_registration")}
+              Patient Basiccccccccccccc
             </h2>
 
             <div className="mt-4 space-y-6 flex flex-col bg-white border border-gray-200/50 rounded-md p-8 shadow-md">
@@ -207,6 +200,23 @@ export default function PublicPatientRegistration(
                 {t("phone_number_verified")}:{" "}
                 <span className="font-bold">{tokenData.phoneNumber}</span>
               </span>
+
+              <FormField
+                control={form.control}
+                name="test_field"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Test Field</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="Enter test value"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}
@@ -379,20 +389,15 @@ export default function PublicPatientRegistration(
               <FormField
                 control={form.control}
                 name="geo_organization"
-                render={({ field, fieldState }) => (
+                render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormControl>
-                      <GovtOrganizationPicker
-                        ref={field.ref}
-                        aria-invalid={!!fieldState.error}
+                      <GovtOrganizationSelector
+                        {...field}
                         required
                         authToken={tokenData.token}
-                        value={selectedGeoOrg}
-                        onChange={(organization) => {
-                          setSelectedGeoOrg(organization);
-                          const isValid =
-                            !!organization && !organization.has_children;
-                          field.onChange(isValid ? organization.id : "");
+                        onChange={(value) => {
+                          field.onChange(value);
                         }}
                       />
                     </FormControl>

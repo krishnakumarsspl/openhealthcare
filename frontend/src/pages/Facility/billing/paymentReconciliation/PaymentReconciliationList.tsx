@@ -9,7 +9,7 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import PaymentsData from "./PaymentsData";
 
-function PaymentReconciliationList({
+export function PaymentReconciliationList({
   facilityId,
   accountId,
 }: {

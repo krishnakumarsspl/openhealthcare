@@ -70,14 +70,14 @@ import useAuthUser from "@/hooks/useAuthUser";
 import useBreakpoints from "@/hooks/useBreakpoints";
 
 import { Avatar } from "@/components/Common/Avatar";
-import { FormattedDosage } from "@/components/Medicine/FormattedDosage";
+import { formatDosage } from "@/components/Medicine/utils";
 import { useCurrentFacilitySilently } from "@/pages/Facility/utils/useCurrentFacility";
 import { Code } from "@/types/base/code/code";
 import {
   buildTimingForTextDosage,
   displayMedicationName,
   DoseRange,
-  getTimingBounds,
+  formatDurationLabel,
   INACTIVE_MEDICATION_STATUSES,
   MEDICATION_REQUEST_INTENT,
   MedicationRequestCreate,
@@ -87,8 +87,6 @@ import {
   MedicationRequestTemplateSpec,
   parseMedicationStringToRequest,
   sumManSlots,
-  timingBoundsToRepeat,
-  validateTimingBounds,
 } from "@/types/emr/medicationRequest/medicationRequest";
 import medicationRequestApi from "@/types/emr/medicationRequest/medicationRequestApi";
 import { MedicationStatementRead } from "@/types/emr/medicationStatement";
@@ -149,7 +147,6 @@ export function buildMedicationForTemplate(
   // Remove internal objects that shouldn't be stored in templates
   delete medicationForTemplate.requested_product_internal;
   delete medicationForTemplate.id;
-  delete medicationForTemplate.dispense_status;
 
   return medicationForTemplate;
 }
@@ -192,7 +189,6 @@ async function fetchProductAndBuildMedication(
   return {
     ...med,
     id: undefined,
-    dispense_status: undefined,
     do_not_perform: med.do_not_perform ?? false,
     dosage_instruction: med.dosage_instruction ?? [
       { as_needed_boolean: false },
@@ -251,14 +247,10 @@ const MEDICATION_REQUEST_FIELDS = {
     validate: (value: unknown) => {
       const dosageInstruction =
         value as MedicationRequestCreate["dosage_instruction"][0];
-      // A real frequency carries an explicit FHIR timing code, an as-needed
-      // flag, or a free-text M-A-N pattern. A bare `timing` is not enough:
-      // setting a duration alone auto-creates a `frequency:1` repeat with no
-      // code/text, which must not satisfy the frequency requirement.
       return !!(
+        dosageInstruction?.timing ||
         dosageInstruction?.as_needed_boolean ||
-        dosageInstruction?.text ||
-        dosageInstruction?.timing?.code
+        dosageInstruction?.text
       );
     },
   },
@@ -268,12 +260,11 @@ const MEDICATION_REQUEST_FIELDS = {
     validate: (value: unknown) => {
       const dosageInstruction =
         value as MedicationRequestCreate["dosage_instruction"][0];
-      const bounds = getTimingBounds(dosageInstruction?.timing?.repeat);
-      // Duration is optional — only validate the contents of a bound that was
-      // actually set (range low <= high, period start <= end, etc.).
-      if (!bounds) return true;
-      const error = validateTimingBounds(bounds);
-      return error ? t(error) : true;
+      if (dosageInstruction?.timing) {
+        const duration = dosageInstruction.timing.repeat.bounds_duration;
+        return !!(duration?.value && duration?.unit);
+      }
+      return true;
     },
   },
 } as const;
@@ -328,13 +319,10 @@ export function validateMedicationRequestQuestion(
           index,
         );
 
-        return fieldErrors.map((error) =>
-          // Duration carries a specific "why it's invalid" message; the
-          // required dose/frequency fields read as a plain required error.
-          error.field_key?.endsWith(".duration")
-            ? error
-            : { ...error, error: t("field_required") },
-        );
+        return fieldErrors.map((error) => ({
+          ...error,
+          error: t("field_required"),
+        }));
       },
     );
 
@@ -647,7 +635,6 @@ export function MedicationRequestQuestion({
       ...medications,
       {
         ...medication,
-        dispense_status: undefined,
         dirty: true, // Mark new medication as dirty
         create_prescription: {
           status: PrescriptionStatus.active,
@@ -686,7 +673,6 @@ export function MedicationRequestQuestion({
 
         return {
           ...request,
-          dispense_status: undefined,
           requested_product: requested_product?.id,
           requested_product_internal: requested_product,
           requester: currentUser,
@@ -704,7 +690,6 @@ export function MedicationRequestQuestion({
           ...parseMedicationStringToRequest(currentUser, statement.medication),
           authored_on: new Date().toISOString(),
           note: statement.note,
-          dispense_status: undefined,
           requester: currentUser,
           dirty: true, // Mark as dirty since it's being added as new
           create_prescription: {
@@ -802,7 +787,6 @@ export function MedicationRequestQuestion({
       ...medications,
       {
         ...medicationToAdd,
-        dispense_status: undefined,
         create_prescription: {
           status: PrescriptionStatus.active,
           alternate_identifier: "",
@@ -840,7 +824,6 @@ export function MedicationRequestQuestion({
         ...medications,
         ...medicationsWithProductKnowledge.map((med) => ({
           ...med,
-          dispense_status: undefined,
           create_prescription: {
             status: PrescriptionStatus.active,
             alternate_identifier: "",
@@ -973,16 +956,9 @@ export function MedicationRequestQuestion({
                           <DosageInstructionList
                             instructions={instructions}
                             renderItem={(di) => {
+                              const dosage = formatDosage(di) || "";
                               const freq = formatFrequency(di) || "";
-                              return (
-                                <div className="flex flex-col">
-                                  <FormattedDosage
-                                    instruction={di}
-                                    fallback=""
-                                  />
-                                  {freq && <span>{freq}</span>}
-                                </div>
-                              );
+                              return [dosage, freq].filter(Boolean).join("\n");
                             }}
                             gap="sm"
                           />
@@ -1157,10 +1133,7 @@ export function MedicationRequestQuestion({
             <div
               className={cn(
                 "relative lg:border border-gray-200 rounded-md",
-                // Must equal the sum of the grid-column tracks below so the
-                // table can expand to its full content width. Keep in sync when
-                // a column width changes (e.g. the duration column at index 3).
-                showAdvancedFields ? "max-w-[2718px]" : "max-w-[1148px]",
+                showAdvancedFields ? "max-w-[2678px]" : "max-w-[1108px]",
                 {
                   "bg-gray-50/50": !desktopLayout,
                 },
@@ -1171,8 +1144,8 @@ export function MedicationRequestQuestion({
                 className={cn(
                   "hidden lg:grid bg-gray-50 border-b border-gray-200 text-sm font-medium text-gray-500",
                   showAdvancedFields
-                    ? "grid-cols-[280px_220px_180px_200px_40px_300px_180px_250px_180px_160px_220px_280px_180px_48px]"
-                    : "grid-cols-[280px_220px_180px_200px_40px_180px_48px]",
+                    ? "grid-cols-[280px_220px_180px_160px_40px_300px_180px_250px_180px_160px_220px_280px_180px_48px]"
+                    : "grid-cols-[280px_220px_180px_160px_40px_180px_48px]",
                 )}
               >
                 <div className="font-semibold text-gray-600 p-3 border-r border-gray-200">
@@ -1357,8 +1330,9 @@ export function MedicationRequestQuestion({
 
                                               {freq && ` · ${freq}`}
 
-                                              {formatDuration(di) &&
-                                                ` · ${formatDuration(di)}`}
+                                              {di?.timing?.repeat
+                                                ?.bounds_duration?.value &&
+                                                ` · ${formatDurationLabel(di.timing.repeat.bounds_duration)}`}
                                             </div>
                                           );
                                         },
@@ -1695,8 +1669,8 @@ const MedicationRequestGridRow: React.FC<MedicationRequestGridRowProps> = ({
       className={cn(
         "grid grid-cols-1 border-b border-gray-200 hover:bg-gray-50/50 space-y-3 lg:space-y-0",
         showAdvancedFields
-          ? "lg:grid-cols-[280px_220px_180px_200px_40px_300px_180px_250px_180px_160px_220px_280px_180px_48px]"
-          : "lg:grid-cols-[280px_220px_180px_200px_40px_180px_48px]",
+          ? "lg:grid-cols-[280px_220px_180px_160px_40px_300px_180px_250px_180px_160px_220px_280px_180px_48px]"
+          : "lg:grid-cols-[280px_220px_180px_160px_40px_180px_48px]",
         {
           "opacity-40 pointer-events-none": disabled,
         },
@@ -1704,12 +1678,7 @@ const MedicationRequestGridRow: React.FC<MedicationRequestGridRowProps> = ({
     >
       {/* Medicine Name */}
       {desktopLayout && (
-        <div
-          className={cn(
-            "lg:p-4 lg:px-2 lg:py-1 flex flex-col lg:col-span-1 lg:border-r border-gray-200 font-medium overflow-hidden text-sm",
-            isReadOnly ? "justify-center" : "justify-between",
-          )}
-        >
+        <div className="lg:p-4 lg:px-2 lg:py-1 flex flex-col justify-between lg:col-span-1 lg:border-r border-gray-200 font-medium overflow-hidden text-sm">
           <span
             className={cn(
               "wrap-break-word line-clamp-2 hidden lg:block",
@@ -1756,7 +1725,6 @@ const MedicationRequestGridRow: React.FC<MedicationRequestGridRowProps> = ({
                         "h-9 text-sm cursor-pointer",
                         hasError(fieldKey) && "border-red-500",
                       )}
-                      disabled={disabled || isReadOnly}
                     />
                   ) : (
                     <>
@@ -1901,46 +1869,50 @@ const MedicationRequestGridRow: React.FC<MedicationRequestGridRowProps> = ({
                 <div className="border-t border-dashed border-gray-300 my-1" />
               )}
               <DurationInput
-                value={getTimingBounds(di?.timing?.repeat)}
-                onChange={(bounds) => {
+                value={di?.timing?.repeat?.bounds_duration}
+                onChange={(duration) => {
+                  if (!duration) {
+                    if (di?.timing) {
+                      handleUpdateDosageInstruction(dIdx, {
+                        timing: {
+                          ...di.timing,
+                          repeat: {
+                            ...di.timing.repeat,
+                            bounds_duration: { value: "0", unit: "d" },
+                          },
+                        },
+                      });
+                    }
+                    return;
+                  }
+
                   if (di?.timing) {
                     handleUpdateDosageInstruction(dIdx, {
                       timing: {
                         ...di.timing,
                         repeat: {
                           ...di.timing.repeat,
-                          ...timingBoundsToRepeat(bounds),
-                        },
-                      },
-                    });
-                  } else if (di?.text && sumManSlots(di.text) !== null) {
-                    // Text M-A-N dosage: keep the frequency derived from the
-                    // pattern (e.g. 1-0-1) for every bound type, then apply the
-                    // chosen duration / range / period.
-                    const base = buildTimingForTextDosage(di.text, {
-                      value: "0",
-                      unit: "d",
-                    });
-                    handleUpdateDosageInstruction(dIdx, {
-                      timing: {
-                        ...base,
-                        repeat: {
-                          ...base.repeat,
-                          ...timingBoundsToRepeat(bounds),
+                          bounds_duration: duration,
                         },
                       },
                     });
                   } else {
-                    handleUpdateDosageInstruction(dIdx, {
-                      timing: {
-                        repeat: {
-                          frequency: 1,
-                          period: "1",
-                          period_unit: "d",
-                          ...timingBoundsToRepeat(bounds),
+                    if (di?.text && sumManSlots(di.text) !== null) {
+                      handleUpdateDosageInstruction(dIdx, {
+                        timing: buildTimingForTextDosage(di.text, duration),
+                      });
+                    } else {
+                      handleUpdateDosageInstruction(dIdx, {
+                        timing: {
+                          repeat: {
+                            frequency: 1,
+                            period: "1",
+                            period_unit: "d",
+                            bounds_duration: duration,
+                          },
                         },
-                      },
-                    });
+                      });
+                    }
                   }
                 }}
                 disabled={disabled || di?.as_needed_boolean || isReadOnly}
@@ -2401,3 +2373,6 @@ const MedicationRequestGridRow: React.FC<MedicationRequestGridRowProps> = ({
     </div>
   );
 };
+
+// Re-export reverseFrequencyOption from MedicationTimingSelect for backwards compatibility
+export { reverseFrequencyOption } from "@/components/Medicine/MedicationTimingSelect";

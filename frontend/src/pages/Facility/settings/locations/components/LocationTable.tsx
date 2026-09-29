@@ -32,7 +32,6 @@ import {
 } from "@/components/ui/tooltip";
 
 import ConfirmActionDialog from "@/components/Common/ConfirmActionDialog";
-import TagAssignmentSheet from "@/components/Tags/TagAssignmentSheet";
 
 import mutate from "@/Utils/request/mutate";
 import { LocationRead, LocationTypeIcons } from "@/types/location/location";
@@ -100,7 +99,6 @@ export function LocationTable({
             <TableHead>{t("type")}</TableHead>
             <TableHead>{t("status")}</TableHead>
             <TableHead>{t("availability")}</TableHead>
-            <TableHead>{t("tags_proper")}</TableHead>
             <TableHead className="text-right">{t("actions")}</TableHead>
           </TableRow>
         </TableHeader>
@@ -184,19 +182,6 @@ export function LocationTable({
                       ? t("unavailable")
                       : t("available")}
                   </Badge>
-                </TableCell>
-                <TableCell onClick={(e) => e.stopPropagation()}>
-                  <TagAssignmentSheet
-                    entityType="location"
-                    entityId={location.id}
-                    facilityId={facilityId}
-                    currentTags={location.tags ?? []}
-                    onUpdate={() => {
-                      queryClient.invalidateQueries({
-                        queryKey: ["locations", facilityId],
-                      });
-                    }}
-                  />
                 </TableCell>
                 <TableCell className="text-right">
                   <div

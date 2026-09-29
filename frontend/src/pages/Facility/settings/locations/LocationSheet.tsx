@@ -20,7 +20,7 @@ interface Props {
   parentId?: string;
 }
 
-export default function SettingsLocationSheet({
+export default function LocationSheet({
   open,
   onOpenChange,
   facilityId,

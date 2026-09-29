@@ -228,7 +228,9 @@ type HealthcareServiceResource = {
 };
 
 export type ScheduleResource =
-  UserResource | LocationResource | HealthcareServiceResource;
+  | UserResource
+  | LocationResource
+  | HealthcareServiceResource;
 
 export type AppointmentBase = {
   id: string;

@@ -117,7 +117,6 @@ export function CreateDispenseSheet({
       <Button>
         <Plus className="size-4 mr-1" />
         {t("new_dispense")}
-        <ShortcutBadge actionId="dispense-button" />
       </Button>
     );
 

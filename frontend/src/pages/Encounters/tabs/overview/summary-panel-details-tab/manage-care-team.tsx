@@ -12,7 +12,7 @@ import { useEncounter } from "@/pages/Encounters/utils/EncounterProvider";
 
 import { formatName } from "@/Utils/utils";
 
-import { SummaryPanelEmptyState as EmptyState } from "./empty-state";
+import { EmptyState } from "./empty-state";
 
 export const ManageCareTeam = () => {
   const { t } = useTranslation();

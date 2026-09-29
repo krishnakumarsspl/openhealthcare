@@ -3,6 +3,10 @@ import {
   PatientHeader,
 } from "@/components/Patient/PatientHeader";
 import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  useEncounterShortcutDisplays,
+  useEncounterShortcuts,
+} from "@/hooks/useEncounterShortcuts";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
 
@@ -12,11 +16,11 @@ import { EncounterCommandDialog } from "@/components/Encounter/EncounterCommandD
 import ErrorPage from "@/components/ErrorPages/DefaultErrorPage";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { CommandShortcut } from "@/components/ui/command";
 import { NavTabs } from "@/components/ui/nav-tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useShortcutSubContext } from "@/context/ShortcutContext";
 import useBreakpoints from "@/hooks/useBreakpoints";
-import { useCareAppTabs } from "@/hooks/useCareApps";
+import { useCareAppEncounterTabs } from "@/hooks/useCareApps";
 import { useSidebarAutoCollapse } from "@/hooks/useSidebarAutoCollapse";
 import { cn } from "@/lib/utils";
 import EncounterHistorySelector from "@/pages/Encounters/EncounterHistorySelector";
@@ -36,7 +40,6 @@ import {
 } from "@/types/emr/encounter/encounter";
 import { PatientRead } from "@/types/emr/patient/patient";
 import { LocationTypeIcons } from "@/types/location/location";
-import { ShortcutBadge } from "@/Utils/keyboardShortcutComponents";
 import { entriesOf, goBack } from "@/Utils/utils";
 import { navigate } from "raviger";
 import { useTranslation } from "react-i18next";
@@ -74,10 +77,10 @@ export const EncounterShow = (props: Props) => {
 
   useSidebarAutoCollapse();
   const [actionsOpen, setActionsOpen] = useState(false);
-  useShortcutSubContext("encounter");
+  const getShortcutDisplay = useEncounterShortcutDisplays();
 
   const { t } = useTranslation();
-  const pluginTabs = useCareAppTabs<PluginEncounterTabProps>("encounterTabs");
+  const pluginTabs = useCareAppEncounterTabs();
   const showMoreAfterIndex = useBreakpoints({
     default: 2,
     xs: 2,
@@ -85,6 +88,8 @@ export const EncounterShow = (props: Props) => {
     xl: 9,
     "2xl": 12,
   });
+
+  useEncounterShortcuts();
 
   const canAccess = canReadClinicalData || canReadSelectedEncounter;
   const hasToken = primaryEncounter?.appointment?.token;
@@ -121,25 +126,21 @@ export const EncounterShow = (props: Props) => {
     updates: {
       label: t(`ENCOUNTER_TAB__updates`),
       component: <EncounterOverviewTab />,
-      shortcutId: "encounter-overview",
     },
     plots: {
       label: t(`ENCOUNTER_TAB__plots`),
       visible: canReadClinicalData,
       component: <EncounterPlotsTab />,
-      shortcutId: "plots",
     },
     observations: {
       label: t(`ENCOUNTER_TAB__observations`),
       visible: canReadClinicalData,
       component: <EncounterObservationsTab />,
-      shortcutId: "observations",
     },
     medicines: {
       label: t(`ENCOUNTER_TAB__medicines`),
       visible: canReadClinicalData,
       component: <EncounterMedicinesTab />,
-      shortcutId: "medicines",
     },
     responses: {
       label: t(`ENCOUNTER_TAB__qnr_responses`),
@@ -151,41 +152,34 @@ export const EncounterShow = (props: Props) => {
           canAccess={canAccess}
         />
       ),
-      shortcutId: "responses",
     },
     service_requests: {
       label: t(`ENCOUNTER_TAB__service_requests`),
       visible: canReadClinicalData,
       component: <EncounterServiceRequestTab />,
-      shortcutId: "service-requests",
     },
     diagnostic_reports: {
       label: t(`ENCOUNTER_TAB__diagnostic_reports`),
       visible: canReadClinicalData,
       component: <EncounterDiagnosticReportsTab />,
-      shortcutId: "diagnostic-reports",
     },
     files: {
       label: t(`ENCOUNTER_TAB__files`),
       visible: canReadClinicalData,
       component: <EncounterFilesTab />,
-      shortcutId: "files",
     },
     notes: {
       label: t(`ENCOUNTER_TAB__notes`),
       visible: canReadClinicalData,
       component: <EncounterNotesTab />,
-      shortcutId: "notes",
     },
     devices: {
       label: t(`ENCOUNTER_TAB__devices`),
       component: <EncounterDevicesTab />,
-      shortcutId: "devices",
     },
     consents: {
       label: t(`ENCOUNTER_TAB__consents`),
       component: <EncounterConsentsTab />,
-      shortcutId: "consents",
     },
 
     ...Object.fromEntries(
@@ -237,16 +231,14 @@ export const EncounterShow = (props: Props) => {
           />
           {selectedEncounter && (
             <div className="flex max-md:flex-col items-end justify-center gap-4">
-              <div className="w-full md:w-auto">
-                <PLUGIN_Component
-                  __name="PatientInfoCardQuickActions"
-                  encounter={selectedEncounter}
-                  className={cn(
-                    buttonVariants({ variant: "primary_gradient" }),
-                    "text-base font-semibold rounded-md w-full md:w-auto",
-                  )}
-                />
-              </div>
+              <PLUGIN_Component
+                __name="PatientInfoCardQuickActions"
+                encounter={selectedEncounter}
+                className={cn(
+                  buttonVariants({ variant: "primary_gradient" }),
+                  "text-base font-semibold rounded-md w-full",
+                )}
+              />
 
               <EncounterCommandDialog
                 encounter={selectedEncounter}
@@ -256,13 +248,12 @@ export const EncounterShow = (props: Props) => {
                   <Button
                     variant="primary_gradient"
                     onClick={() => setActionsOpen(true)}
-                    className="text-base font-semibold rounded-md w-full md:w-auto"
+                    className="text-base font-semibold rounded-md w-full"
                   >
                     {t("encounter_actions")}
-                    <ShortcutBadge
-                      actionId="open-command-dialog"
-                      className="shrink-0"
-                    />
+                    <CommandShortcut className="text-white hidden md:inline">
+                      {getShortcutDisplay("open-command-dialog")}
+                    </CommandShortcut>
                   </Button>
                 }
               />
@@ -354,6 +345,7 @@ export const EncounterShow = (props: Props) => {
             tabContentClassName="flex-none overflow-x-auto overflow-y-hidden lg:overflow-y-auto lg:h-[calc(100vh-14rem-var(--encounter-header-offset))]"
             tabs={tabs}
             currentTab={props.tab}
+            tabTriggerClassName="max-w-36"
             onTabChange={(tab) =>
               navigate(tab, {
                 query:

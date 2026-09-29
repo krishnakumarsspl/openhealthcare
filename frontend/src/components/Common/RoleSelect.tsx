@@ -26,7 +26,6 @@ import useBreakpoints from "@/hooks/useBreakpoints";
 import { RoleBase, RoleContext } from "@/types/emr/role/role";
 import roleApi from "@/types/emr/role/roleApi";
 import query from "@/Utils/request/query";
-import { isIOSDevice } from "@/Utils/utils";
 
 interface RoleSelectProps {
   value?: RoleBase;
@@ -68,7 +67,7 @@ function RoleCommandContent({
         placeholder={t("search_roles")}
         onValueChange={setSearchTerm}
         className="outline-hidden border-none ring-0 shadow-none text-base sm:text-sm"
-        autoFocus={!isIOSDevice}
+        autoFocus
       />
       <CommandList>
         <CommandEmpty>
@@ -169,13 +168,6 @@ export function RoleSelect({
     if (inView && hasNextPage) fetchNextPage();
   }, [inView, hasNextPage, fetchNextPage]);
 
-  const handleOpenChange = (isOpen: boolean) => {
-    setOpen(isOpen);
-    if (!isOpen) {
-      setSearchTerm("");
-    }
-  };
-
   const renderTriggerButton = () => (
     <Button
       variant="outline"
@@ -193,7 +185,7 @@ export function RoleSelect({
 
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={handleOpenChange}>
+      <Drawer open={open} onOpenChange={setOpen}>
         <DrawerTrigger asChild>{renderTriggerButton()}</DrawerTrigger>
         <DrawerContent className="px-0 pt-2 min-h-[50vh] max-h-[85vh] rounded-t-lg">
           <div className="mt-3 pb-[env(safe-area-inset-bottom)] flex-1 overflow-y-auto">
@@ -204,7 +196,7 @@ export function RoleSelect({
               isFetchingNextPage={isFetchingNextPage}
               value={selectedRole}
               onChange={onChange}
-              setOpen={handleOpenChange}
+              setOpen={setOpen}
               ref={ref}
             />
           </div>
@@ -214,7 +206,7 @@ export function RoleSelect({
   }
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange} modal>
+    <Popover open={open} onOpenChange={setOpen} modal>
       <PopoverTrigger asChild>{renderTriggerButton()}</PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
         <RoleCommandContent
@@ -224,7 +216,7 @@ export function RoleSelect({
           isFetchingNextPage={isFetchingNextPage}
           value={selectedRole}
           onChange={onChange}
-          setOpen={handleOpenChange}
+          setOpen={setOpen}
           ref={ref}
         />
       </PopoverContent>

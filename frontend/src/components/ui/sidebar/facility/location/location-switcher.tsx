@@ -30,7 +30,6 @@ import PaginationComponent from "@/components/Common/Pagination";
 import { RESULTS_PER_PAGE_LIMIT } from "@/common/constants";
 
 import { TooltipComponent } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 import useCurrentLocation from "@/pages/Facility/locations/utils/useCurrentLocation";
 import { LocationRead } from "@/types/location/location";
 import locationApi from "@/types/location/locationApi";
@@ -51,6 +50,19 @@ export function LocationSwitcher() {
     setLocation(extractedLocation as unknown as LocationRead);
   }, [extractedLocation]);
 
+  if (state === "collapsed") {
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => navigate(fallbackUrl)}
+        className="w-8 h-8"
+      >
+        <CareIcon icon="l-home-alt" />
+      </Button>
+    );
+  }
+
   return (
     <Fragment>
       <LocationSelectorDialog
@@ -62,58 +74,37 @@ export function LocationSwitcher() {
         myLocations={true}
       />
       <div className="flex flex-col items-start gap-4">
-        {state === "collapsed" ? (
+        <Button variant="ghost" onClick={() => navigate(fallbackUrl)}>
+          <CareIcon icon="l-arrow-left" />
+          <span className="underline underline-offset-2">{t("home")}</span>
+        </Button>
+
+        <div className="w-full px-2">
           <Button
             variant="ghost"
-            size="icon"
-            onClick={() => navigate(fallbackUrl)}
-            className="w-8 h-8"
-            aria-label={t("home")}
-            title={t("home")}
+            className="w-full flex items-center justify-between gap-3 py-6 px-2 rounded-md bg-white border border-gray-200"
+            onClick={() => setOpenDialog(true)}
           >
-            <CareIcon icon="l-home-alt" />
-          </Button>
-        ) : (
-          <Button variant="ghost" onClick={() => navigate(fallbackUrl)}>
-            <CareIcon icon="l-arrow-left" />
-            <span className="underline underline-offset-2">{t("home")}</span>
-          </Button>
-        )}
-
-        <div className={cn("w-full", state === "expanded" ? "px-2" : "px-0")}>
-          <TooltipComponent content={location?.name ?? t("select_location")}>
-            <Button
-              variant="ghost"
-              className={cn(
-                "w-full flex items-center justify-between gap-3 overflow-hidden rounded-md border border-gray-200 bg-white px-2",
-                state === "collapsed" ? "justify-center" : "py-6",
-              )}
-              aria-label={location?.name ?? t("select_location")}
-              onClick={() => setOpenDialog(true)}
-            >
-              <div className="flex min-w-0 flex-1 items-center gap-2">
-                <MapPinIcon className="size-5 text-green-600" />
-                <div
-                  className={cn(
-                    "min-w-0 flex-1",
-                    state === "collapsed" && "hidden",
-                  )}
+            <div className="flex min-w-0 items-center gap-2">
+              <MapPinIcon className="size-5 text-green-600" />
+              <div className="min-w-0 flex-1">
+                <TooltipComponent
+                  content={location?.name}
+                  className="hidden lg:block max-w-xs"
                 >
-                  <div className="flex min-w-0 w-full flex-col items-start overflow-hidden">
+                  <div className="flex min-w-0 flex-col items-start">
                     <span className="text-xs text-gray-500">
                       {t("current_location")}
                     </span>
-                    <span className="max-w-full truncate text-left text-sm font-medium text-gray-900">
+                    <span className="w-full truncate text-left text-sm font-medium text-gray-900">
                       {location?.name}
                     </span>
                   </div>
-                </div>
+                </TooltipComponent>
               </div>
-              {state === "expanded" && (
-                <CareIcon icon="l-sort" className="shrink-0" />
-              )}
-            </Button>
-          </TooltipComponent>
+            </div>
+            <CareIcon icon="l-sort" />
+          </Button>
           <Separator className="mt-4" />
         </div>
       </div>

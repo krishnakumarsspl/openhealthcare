@@ -152,10 +152,10 @@ const ScheduleTemplateEditor = ({
     .object({
       name: z.string().min(1, t("field_required")),
       valid_from: z.date({
-        error: t("field_required"),
+        required_error: t("field_required"),
       }),
       valid_to: z.date({
-        error: t("field_required"),
+        required_error: t("field_required"),
       }),
       is_public: z.boolean(),
     })
@@ -556,18 +556,16 @@ const NewAvailabilityCard = ({
       name: z.string().min(1, t("field_required")),
       slot_type: z.enum(["appointment", "open", "closed"]),
       start_time: z.string().min(1, t("field_required")) as z.ZodType<
-        Time | undefined,
         Time | undefined
       >,
       end_time: z.string().min(1, t("field_required")) as z.ZodType<
-        Time | undefined,
         Time | undefined
       >,
       slot_size_in_minutes: z.number().nullable(),
       tokens_per_slot: z.number().nullable(),
       reason: z.string().trim(),
       weekdays: z
-        .array(z.number() as unknown as z.ZodType<DayOfWeek, DayOfWeek>)
+        .array(z.number() as unknown as z.ZodType<DayOfWeek>)
         .min(1, t("schedule_weekdays_min_error")),
       is_auto_fill: z.boolean().optional(),
       num_of_slots: z.number().min(1, t("number_min_error", { min: 0 })),

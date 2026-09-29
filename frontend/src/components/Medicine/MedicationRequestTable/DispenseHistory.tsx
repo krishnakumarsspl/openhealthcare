@@ -19,8 +19,7 @@ import { DispenseButton } from "@/components/Consumable/DispenseButton";
 import { EmptyState } from "@/components/ui/empty-state";
 
 import { DosageInstructionList } from "@/components/Medicine/DosageInstructionList";
-import { FormattedDosage } from "@/components/Medicine/FormattedDosage";
-import { formatFrequency } from "@/components/Medicine/utils";
+import { formatDosage, formatFrequency } from "@/components/Medicine/utils";
 
 import { round } from "@/Utils/decimal";
 import query from "@/Utils/request/query";
@@ -173,9 +172,7 @@ export function DispenseHistory({
                   <TableCell className="text-gray-950">
                     <DosageInstructionList
                       instructions={instructions}
-                      renderItem={(di) => (
-                        <FormattedDosage instruction={di} fallback="-" />
-                      )}
+                      renderItem={(di) => formatDosage(di) || "-"}
                     />
                   </TableCell>
                   <TableCell className="text-gray-950">

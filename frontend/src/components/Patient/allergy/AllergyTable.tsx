@@ -83,7 +83,7 @@ const AllergyCard = ({
                 <div className="text-gray-500">{t("reported_by")}:</div>
                 <div className="mt-1 flex items-center gap-1.5">
                   <Avatar
-                    name={formatName(allergy.created_by, true)}
+                    name={formatName(allergy.created_by)}
                     className="size-5"
                     imageUrl={allergy.created_by.profile_picture_url}
                   />

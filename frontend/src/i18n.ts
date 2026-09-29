@@ -1,6 +1,5 @@
 import { PlugConfig } from "@/types/plugConfig";
 import plugConfigApi from "@/types/plugConfig/plugConfigApi";
-import { mergePlugConfigs } from "@/Utils/plugConfig";
 import { callApi } from "@/Utils/request/query";
 import careConfig from "@careConfig";
 import i18n from "i18next";
@@ -32,13 +31,9 @@ const namespaceToUrl = (namespace: string) => {
     (config) => config.meta?.name === namespace || config.slug === namespace,
   );
 
-  if (typeof pluginConfig?.meta?.localPath === "string") {
-    return pluginConfig.meta.localPath;
-  }
-
   if (
     pluginConfig?.meta?.url &&
-    z.url().safeParse(pluginConfig.meta.url).success
+    z.string().url().safeParse(pluginConfig.meta.url).success
   ) {
     const url = new URL(pluginConfig.meta.url);
     return url.origin.toString();
@@ -55,13 +50,13 @@ export async function initI18n() {
     const response = await callApi(plugConfigApi.list, {
       silent: true,
     });
-    pluginConfigs = mergePlugConfigs(response.configs || []);
+    pluginConfigs = response.configs || [];
   } catch (error) {
     console.warn(
       "Failed to fetch plugin configurations for i18n namespaces:",
       error,
     );
-    pluginConfigs = mergePlugConfigs();
+    pluginConfigs = [];
   }
 
   const pluginNamespaces = pluginConfigs
@@ -154,7 +149,6 @@ export async function initI18n() {
     .init({
       fallbackLng: "en",
       ns: namespaces,
-      fallbackNS: pluginNamespaces,
       load: "currentOnly",
       supportedLngs: Object.keys(LANGUAGES),
       interpolation: {
@@ -165,7 +159,4 @@ export async function initI18n() {
     });
 }
 
-/**
- * @public
- */
 export default i18n;

@@ -82,7 +82,6 @@ function TagSelector({
         onChange={handleChange}
         className="h-9 w-full"
         facilityId={facilityId}
-        align="end"
       />
     </div>
   );

@@ -3,7 +3,13 @@ import { t } from "i18next";
 import { RoleRead } from "@/types/emr/role/role";
 import { UserReadMinimal } from "@/types/user/user";
 
-type org_type = "team" | "govt" | "role" | "product_supplier" | "other";
+type org_type =
+  | "team"
+  | "govt"
+  | "role"
+  | "product_supplier"
+  | "other"
+  | "product_supplier";
 
 export enum OrgType {
   TEAM = "team",

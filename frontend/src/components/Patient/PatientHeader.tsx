@@ -7,7 +7,6 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { PatientHoverCard } from "@/pages/Facility/services/serviceRequests/PatientHoverCard";
 import {
-  getPatientIdentifiers,
   PatientListRead,
   PatientRead,
   PublicPatientRead,
@@ -39,17 +38,22 @@ export function PatientHeader({
           disabled={isPatientPage}
         />
         <div className="flex flex-wrap xl:gap-5 gap-2">
-          {getPatientIdentifiers(patient).map((identifier) => (
-            <div
-              key={identifier.config.id}
-              className="flex flex-col gap-1 items-start md:hidden xl:flex"
-            >
-              <span className="text-xs text-gray-700 md:w-auto">
-                {identifier.config.config.display}:{" "}
-              </span>
-              <span className="text-sm font-semibold">{identifier.value}</span>
-            </div>
-          ))}
+          {"instance_identifiers" in patient &&
+            patient.instance_identifiers
+              ?.filter(({ config }) => !config.config.auto_maintained)
+              .map((identifier) => (
+                <div
+                  key={identifier.config.id}
+                  className="flex flex-col gap-1 items-start md:hidden xl:flex"
+                >
+                  <span className="text-xs text-gray-700 md:w-auto">
+                    {identifier.config.config.display}:{" "}
+                  </span>
+                  <span className="text-sm font-semibold">
+                    {identifier.value}
+                  </span>
+                </div>
+              ))}
           <PatientTagsDisplay patient={patient} className="text-xs flex-1" />
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import CareIcon from "@/CAREUI/icons/CareIcon";
@@ -10,6 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
 
 import { FileUploadReturn } from "@/hooks/useFileUpload";
 
@@ -31,12 +32,19 @@ export default function FileUploadDropdown({
   buttonText,
 }: FileUploadDropdownProps) {
   const { t } = useTranslation();
-  const internalInputRef = useRef<HTMLInputElement | null>(null);
-  const fileInputRef = inputRef ?? internalInputRef;
+  const [open, setOpen] = useState(false);
+  const prevFileCount = useRef(fileUpload.files.length);
+
+  // Auto-close dropdown when new files are added (after file picker closes)
+  useEffect(() => {
+    if (fileUpload.files.length > prevFileCount.current) {
+      setOpen(false);
+    }
+    prevFileCount.current = fileUpload.files.length;
+  }, [fileUpload.files.length]);
 
   return (
-    <DropdownMenu>
-      <fileUpload.Input className="hidden" ref={fileInputRef} />
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button
           type="button"
@@ -53,12 +61,20 @@ export default function FileUploadDropdown({
         className="w-[calc(100vw-2.5rem)] sm:w-full"
       >
         <DropdownMenuItem
-          className="flex flex-row items-center text-primary-900 font-medium"
-          onSelect={() => fileInputRef.current?.click()}
+          className="flex flex-row items-center"
+          onSelect={(e) => {
+            e.preventDefault();
+          }}
           aria-label={t("choose_file")}
         >
-          <CareIcon icon="l-file-upload-alt" />
-          <span>{t("choose_file")}</span>
+          <Label className="flex items-center w-full text-primary-900 hover:text-black py-1 font-medium">
+            <CareIcon icon="l-file-upload-alt" />
+            <span>{t("choose_file")}</span>
+            {fileUpload.Input({
+              className: "hidden",
+              ...(inputRef ? { ref: inputRef } : {}),
+            })}
+          </Label>
         </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={() => fileUpload.handleCameraCapture()}

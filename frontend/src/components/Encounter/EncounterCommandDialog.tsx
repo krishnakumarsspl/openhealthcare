@@ -9,7 +9,10 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from "@/components/ui/command";
-import { useShortcutDisplay } from "@/context/ShortcutContext";
+import {
+  useEncounterShortcutDisplays,
+  useEncounterShortcuts,
+} from "@/hooks/useEncounterShortcuts";
 import {
   ArrowBigRight,
   Building2,
@@ -29,12 +32,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { PLUGIN_Component } from "@/PluginEngine";
 import query from "@/Utils/request/query";
 import { useCareApps } from "@/hooks/useCareApps";
+import useQuestionnaireOptions from "@/hooks/useQuestionnaireOptions";
 import { useEncounter } from "@/pages/Encounters/utils/EncounterProvider";
-import { encounterRequiresDischarge } from "@/pages/Encounters/utils/useEncounterProgressController";
 import { EncounterRead } from "@/types/emr/encounter/encounter";
 import questionnaireApi from "@/types/questionnaire/questionnaireApi";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "raviger";
 import { useTranslation } from "react-i18next";
 
 interface ActionItem {
@@ -63,16 +65,12 @@ export function EncounterCommandDialog({
   onOpenChange,
   trigger,
 }: EncounterCommandDialogProps) {
-  const {
-    canWriteSelectedEncounter,
-    canRestartSelectedEncounter,
-    actions,
-    selectedEncounterId,
-    primaryEncounterId,
-  } = useEncounter();
+  const { canWriteSelectedEncounter, canRestartSelectedEncounter } =
+    useEncounter();
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
-  const navigate = useNavigate();
+
+  const questionnaireOptions = useQuestionnaireOptions("encounter_actions");
 
   const { data: questionnaires, isLoading } = useQuery({
     queryKey: ["questionnaires", search, "encounter"],
@@ -83,6 +81,7 @@ export function EncounterCommandDialog({
         subject_type: "encounter",
       },
     }),
+    enabled: !!search,
   });
 
   useEffect(() => {
@@ -91,7 +90,8 @@ export function EncounterCommandDialog({
     }
   }, [open]);
 
-  const getShortcutDisplay = useShortcutDisplay();
+  const getShortcutDisplay = useEncounterShortcutDisplays();
+  const { handleAction } = useEncounterShortcuts();
 
   const STORAGE_KEY = "encounter-command-dialog-recent-actions";
   const MAX_RECENT_ACTIONS = 4;
@@ -108,86 +108,24 @@ export function EncounterCommandDialog({
   const [recentActionsState, setRecentActionsState] =
     useState<string[]>(getRecentActions);
 
-  // Build encounter URL helper
-  const buildEncounterUrl = useCallback(
-    (path: string) => {
-      const currentEncounterIdToUse = primaryEncounterId || encounter.id;
-      const baseUrl = `/facility/${encounter.facility.id}/patient/${encounter.patient.id}/encounter/${currentEncounterIdToUse}${path}`;
+  // Handle keyboard shortcut to open command dialog
+  useEffect(() => {
+    const handleOpenCommandDialog = () => {
+      onOpenChange(true);
+    };
 
-      // Add selectedEncounter parameter if we're viewing a different encounter
-      if (
-        selectedEncounterId &&
-        primaryEncounterId &&
-        selectedEncounterId !== primaryEncounterId
-      ) {
-        const separator = path.includes("?") ? "&" : "?";
-        return `${baseUrl}${separator}selectedEncounter=${selectedEncounterId}`;
-      }
+    document.addEventListener(
+      "open-encounter-command-dialog",
+      handleOpenCommandDialog,
+    );
 
-      return baseUrl;
-    },
-    [encounter, selectedEncounterId, primaryEncounterId],
-  );
-
-  // Handle action execution
-  const handleAction = useCallback(
-    (actionId: string) => {
-      const actionHandlers: Record<string, () => void> = {
-        "add-service-request": () =>
-          navigate(buildEncounterUrl("/questionnaire/service_request")),
-        "add-medication-request": () =>
-          navigate(buildEncounterUrl("/questionnaire/medication_request")),
-        "add-allergy": () =>
-          navigate(buildEncounterUrl("/questionnaire/allergy_intolerance")),
-        "add-symptoms": () =>
-          navigate(buildEncounterUrl("/questionnaire/symptom")),
-        "add-diagnosis": () =>
-          navigate(buildEncounterUrl("/questionnaire/diagnosis")),
-        "update-encounter": () =>
-          navigate(buildEncounterUrl("/questionnaire/encounter")),
-        "service-requests": () =>
-          navigate(buildEncounterUrl("/service_requests")),
-        "diagnostic-reports": () =>
-          navigate(buildEncounterUrl("/diagnostic_reports")),
-        "clinical-history": () =>
-          navigate(
-            `/facility/${encounter.facility.id}/patient/${encounter.patient.id}/history/responses?sourceUrl=${encodeURIComponent(
-              buildEncounterUrl("/updates"),
-            )}`,
-          ),
-        "encounter-overview": () => navigate(buildEncounterUrl("/updates")),
-        plots: () => navigate(buildEncounterUrl("/plots")),
-        observations: () => navigate(buildEncounterUrl("/observations")),
-        medicines: () => navigate(buildEncounterUrl("/medicines")),
-        responses: () => navigate(buildEncounterUrl("/responses")),
-        files: () => navigate(buildEncounterUrl("/files")),
-        notes: () => navigate(buildEncounterUrl("/notes")),
-        devices: () => navigate(buildEncounterUrl("/devices")),
-        consents: () => navigate(buildEncounterUrl("/consents")),
-        "mark-as-completed": () => actions.markAsCompleted(),
-        "mark-as-complete": () => actions.markAsCompleted(true),
-        "assign-location": () => actions.assignLocation(),
-        "view-location-history": () => actions.viewLocationHistory(),
-        "manage-care-team": () => actions.manageCareTeam(),
-        "manage-departments": () => actions.manageDepartments(),
-        dispense: () => actions.dispense(),
-        "restart-encounter": () => actions.restartEncounter(),
-      };
-
-      const handler = actionHandlers[actionId];
-      if (handler) {
-        handler();
-        return;
-      }
-
-      // Handle dynamic questionnaire actions
-      if (actionId.startsWith("questionnaire-")) {
-        const slug = actionId.replace("questionnaire-", "");
-        navigate(buildEncounterUrl(`/questionnaire/${slug}`));
-      }
-    },
-    [navigate, buildEncounterUrl, actions, encounter],
-  );
+    return () => {
+      document.removeEventListener(
+        "open-encounter-command-dialog",
+        handleOpenCommandDialog,
+      );
+    };
+  }, [onOpenChange]);
 
   const addRecentAction = useCallback(
     (actionId: string): void => {
@@ -230,6 +168,12 @@ export function EncounterCommandDialog({
             id: "add-diagnosis",
             label: t("add_diagnosis"),
             shortcut: getShortcutDisplay("add-diagnosis"),
+            icon: <Plus />,
+          },
+          {
+            id: "add-questionnaire",
+            label: t("add_form"),
+            shortcut: getShortcutDisplay("add-questionnaire"),
             icon: <Plus />,
           },
           {
@@ -281,9 +225,12 @@ export function EncounterCommandDialog({
         },
         {
           id: "mark-as-completed",
-          label: encounterRequiresDischarge(encounter)
-            ? t("mark_for_discharge")
-            : t("mark_as_completed"),
+          label:
+            encounter.encounter_class === "imp" &&
+            encounter?.status !== "discharged"
+              ? t("mark_for_discharge")
+              : t("mark_as_completed"),
+          shortcut: getShortcutDisplay("mark-as-completed"),
           icon: <CheckCircle2 />,
         },
         {
@@ -357,12 +304,6 @@ export function EncounterCommandDialog({
           icon: <ArrowBigRight />,
         },
         {
-          id: "responses",
-          label: t("responses"),
-          shortcut: getShortcutDisplay("responses"),
-          icon: <ArrowBigRight />,
-        },
-        {
           id: "files",
           label: t("files"),
           shortcut: getShortcutDisplay("files"),
@@ -406,7 +347,11 @@ export function EncounterCommandDialog({
       groups.push({
         group: t("questionnaire"),
         items: [
-          ...(questionnaires?.results || []).map((option) => ({
+          ...(
+            (search.length > 0
+              ? questionnaires?.results
+              : questionnaireOptions?.results) || []
+          ).map((option) => ({
             id: `questionnaire-${option.slug}`,
             label: option.title,
             icon: <NotebookPen />,
@@ -419,13 +364,13 @@ export function EncounterCommandDialog({
     return groups;
   }, [
     t,
+    questionnaireOptions,
     questionnaires,
     search,
     getShortcutDisplay,
+    isLoading,
     canWriteSelectedEncounter,
     canRestartSelectedEncounter,
-    encounter.encounter_class,
-    encounter.status,
   ]);
 
   const findRecentActions = useCallback(

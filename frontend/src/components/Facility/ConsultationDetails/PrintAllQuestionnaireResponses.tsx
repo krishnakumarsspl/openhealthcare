@@ -14,10 +14,7 @@ import { formatValue } from "@/components/Facility/ConsultationDetails/Questionn
 import { useCurrentFacilitySilently } from "@/pages/Facility/utils/useCurrentFacility";
 import { EncounterRead } from "@/types/emr/encounter/encounter";
 import encounterApi from "@/types/emr/encounter/encounterApi";
-import {
-  getPatientIdentifiers,
-  PatientRead,
-} from "@/types/emr/patient/patient";
+import { PatientRead } from "@/types/emr/patient/patient";
 import patientApi from "@/types/emr/patient/patientApi";
 import { PrintTemplateType } from "@/types/facility/printTemplate";
 import { PatientIdentifierUse } from "@/types/patient/patientIdentifierConfig/patientIdentifierConfig";
@@ -99,7 +96,7 @@ export function PrintAllQuestionnaireResponses({
             </h2>
           </div>
 
-          <PrintableEncounterDetails
+          <EncounterDetails
             encounter={encounter}
             patient={encounter?.patient ?? patient}
           />
@@ -116,7 +113,7 @@ export function PrintAllQuestionnaireResponses({
           {questionnaireResponses?.results?.map(
             (item: QuestionnaireResponse) => (
               <div key={item.id} className="w-full">
-                <PrintableResponseCard key={item.id} item={item} />
+                <ResponseCard key={item.id} item={item} />
               </div>
             ),
           )}
@@ -153,7 +150,7 @@ interface EncounterDetailsProps {
   patient?: PatientRead;
 }
 
-export function PrintableEncounterDetails({
+export function EncounterDetails({
   encounter,
   patient,
 }: EncounterDetailsProps) {
@@ -173,15 +170,17 @@ export function PrintableEncounterDetails({
               : undefined
           }
         />
-        {getPatientIdentifiers(patient, {
-          use: PatientIdentifierUse.official,
-        }).map((identifier) => (
-          <DetailRow
-            key={identifier.config.id}
-            label={identifier.config.config.display}
-            value={identifier.value}
-          />
-        ))}
+        {patient?.instance_identifiers
+          ?.filter(
+            ({ config }) => config.config.use === PatientIdentifierUse.official,
+          )
+          .map((identifier) => (
+            <DetailRow
+              key={identifier.config.id}
+              label={identifier.config.config.display}
+              value={identifier.value}
+            />
+          ))}
         {patient?.address && (
           <DetailRow label={t("address")} value={patient.address} />
         )}
@@ -280,11 +279,17 @@ function QuestionGroup({
   }[];
   level?: number;
 }) {
+  const hasResponses = responses.some((r) =>
+    group.questions?.some((q) => q.id === r.question_id),
+  );
+
+  if (!hasResponses) return null;
+
   return (
     <div className={cn("space-y-2", group.styling_metadata?.classes)}>
-      {group.text && (
+      {!!level && group.text && (
         <div className="flex flex-col space-y-1">
-          <h4 className="text-lg font-semibold text-black">
+          <h4 className="text-sm font-medium text-secondary-700">
             {group.text}
             {group.code && (
               <span className="ml-1 text-xs text-gray-500">
@@ -292,7 +297,7 @@ function QuestionGroup({
               </span>
             )}
           </h4>
-          {level === 0 && <Separator />}
+          {level === 0 && <Separator className="my-2" />}
         </div>
       )}
       <div
@@ -332,7 +337,7 @@ interface ResponseCardProps {
   item?: QuestionnaireResponse;
 }
 
-export function PrintableResponseCard({ item }: ResponseCardProps) {
+export function ResponseCard({ item }: ResponseCardProps) {
   const { t } = useTranslation();
 
   if (!item) return null;
@@ -370,9 +375,7 @@ export function PrintableResponseCard({ item }: ResponseCardProps) {
               const response = item.responses.find(
                 (r) => r.question_id === question.id,
               );
-              if (!response) {
-                return null;
-              }
+              if (!response) return null;
 
               return (
                 <QuestionResponseValue

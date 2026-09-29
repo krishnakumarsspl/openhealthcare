@@ -22,7 +22,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { register } from "@/lib/override/";
 import { cn } from "@/lib/utils";
 import {
   InvoiceChargeItemTitle,
@@ -37,10 +36,7 @@ import {
   PAYMENT_RECONCILIATION_METHOD_MAP,
   PaymentReconciliationStatus,
 } from "@/types/billing/paymentReconciliation/paymentReconciliation";
-import {
-  getPartialId,
-  getPatientIdentifiers,
-} from "@/types/emr/patient/patient";
+import { getPartialId } from "@/types/emr/patient/patient";
 import patientApi from "@/types/emr/patient/patientApi";
 import { PrintTemplateType } from "@/types/facility/printTemplate";
 import { PatientIdentifierUse } from "@/types/patient/patientIdentifierConfig/patientIdentifierConfig";
@@ -53,7 +49,7 @@ type PrintInvoiceProps = {
   invoiceId: string;
 };
 
-export function PrintInvoiceBase({ facilityId, invoiceId }: PrintInvoiceProps) {
+export function PrintInvoice({ facilityId, invoiceId }: PrintInvoiceProps) {
   const { t } = useTranslation();
 
   const { data: invoice, isLoading: isInvoiceLoading } = useQuery({
@@ -183,19 +179,25 @@ export function PrintInvoiceBase({ facilityId, invoiceId }: PrintInvoiceProps) {
                     {formatPatientAge(invoice.account.patient, true)})
                   </span>
                 </p>
-                {getPatientIdentifiers(verifiedPatient, {
-                  use: PatientIdentifierUse.official,
-                }).map((identifier) => (
-                  <div
-                    key={identifier.config.id}
-                    className="text-base text-gray-700"
-                  >
-                    <span>{identifier.config.config.display}: </span>
-                    <span className="ml-2 font-semibold">
-                      {identifier.value}
-                    </span>
-                  </div>
-                ))}
+                {verifiedPatient &&
+                  "instance_identifiers" in verifiedPatient &&
+                  verifiedPatient.instance_identifiers
+                    .filter(
+                      ({ config }) =>
+                        config.config.use === PatientIdentifierUse.official &&
+                        !config.config.auto_maintained,
+                    )
+                    .map((identifier) => (
+                      <div
+                        key={identifier.config.id}
+                        className="text-base text-gray-700"
+                      >
+                        <span>{identifier.config.config.display}: </span>
+                        <span className="ml-2 font-semibold">
+                          {identifier.value}
+                        </span>
+                      </div>
+                    ))}
                 <div className="flex gap-1 font-medium text-gray-700 text-sm mt-1">
                   <span>{t("address")}:</span>
                   <span className="whitespace-pre-wrap">
@@ -708,4 +710,4 @@ export function PrintInvoiceBase({ facilityId, invoiceId }: PrintInvoiceProps) {
   );
 }
 
-export default register("PrintInvoice", PrintInvoiceBase);
+export default PrintInvoice;
