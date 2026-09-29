@@ -32,8 +32,11 @@ import {
 import ConfirmActionDialog from "@/components/Common/ConfirmActionDialog";
 import { HistoricalRecordSelector } from "@/components/HistoricalRecordSelector";
 import { DosageInstructionList } from "@/components/Medicine/DosageInstructionList";
-import { FormattedDosage } from "@/components/Medicine/FormattedDosage";
-import { formatDuration, formatFrequency } from "@/components/Medicine/utils";
+import {
+  formatDosage,
+  formatDuration,
+  formatFrequency,
+} from "@/components/Medicine/utils";
 import { EntitySelectionDrawer } from "@/components/Questionnaire/EntitySelectionDrawer";
 import ValueSetSelect from "@/components/Questionnaire/ValueSetSelect";
 
@@ -345,13 +348,9 @@ export function MedicationStatementQuestion({
                       <DosageInstructionList
                         instructions={instructions}
                         renderItem={(di) => {
+                          const dosage = formatDosage(di) || "";
                           const freq = formatFrequency(di) || "";
-                          return (
-                            <div className="flex flex-col">
-                              <FormattedDosage instruction={di} fallback="" />
-                              {freq && <span>{freq}</span>}
-                            </div>
-                          );
+                          return [dosage, freq].filter(Boolean).join("\n");
                         }}
                         gap="sm"
                       />

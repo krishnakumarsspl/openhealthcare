@@ -11,7 +11,6 @@ export enum InternalType {
   pharmacy = "pharmacy",
   lab = "lab",
   scheduling = "scheduling",
-  store = "store",
 }
 
 export interface BaseHealthcareServiceSpec {

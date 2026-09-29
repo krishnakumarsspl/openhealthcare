@@ -93,9 +93,10 @@ test.describe("Payment Reconciliation", () => {
     // Save payment
     await page.getByRole("button", { name: /record payment/i }).click();
 
-    // Wait for success message to appear in the sheet
-    const successMessage = page.getByText(/payment.*recorded.*successfully/i);
-    await expect(successMessage).toBeVisible();
+    // Verify success
+    await expect(
+      page.getByText(/payment.*recorded.*successfully/i),
+    ).toBeVisible();
   });
 
   test("should open record payment dialog using keyboard shortcut R", async ({
@@ -105,11 +106,9 @@ test.describe("Payment Reconciliation", () => {
     // Press 'R' to open Record Payment
     await page.keyboard.press("r");
 
-    // Verify Record Payment sheet is open by checking for the sheet heading
-    const sheet = page.locator("[role='dialog']").filter({
-      has: page.getByRole("heading", { name: /collect payment/i }),
-    });
-    await expect(sheet).toBeVisible();
+    // Verify Record Payment dialog is open
+    const dialog = page.getByRole("dialog", { name: "Record Payment" });
+    await expect(dialog).toBeVisible();
   });
 
   test("should show validation error when submitting empty payment", async ({
@@ -169,13 +168,6 @@ test.describe("Payment Reconciliation", () => {
     await expect(
       page.getByText(/payment.*recorded.*successfully/i),
     ).toBeVisible();
-
-    // Close the success view by clicking the close button in the sheet
-    const sheet = page.locator("[role='dialog']");
-    await sheet.getByRole("button", { name: /close/i }).first().click();
-
-    // Wait for sheet to close and button to be visible again
-    await expect(page.getByRole("button", { name: /advance/i })).toBeVisible();
 
     // Record Payment again without refreshing the page
     await page.getByRole("button", { name: /advance/i }).click();

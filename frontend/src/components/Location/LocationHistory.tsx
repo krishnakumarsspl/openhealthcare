@@ -17,28 +17,16 @@ export function LocationHistory({ history }: LocationHistoryProps) {
       </div>
     );
   }
-
-  const sortedHistory = [...history].sort(
-    (a, b) =>
-      new Date(b.start_datetime).getTime() -
-      new Date(a.start_datetime).getTime(),
-  );
-
-  const latestIndex = sortedHistory.findIndex(
-    (item) => item.status === "active" && item.end_datetime === null,
-  );
-
   return (
     <div className="space-y-4">
-      {sortedHistory.map((item, index) => (
-        <div key={item.id}>
+      {history.map((item, index) => (
+        <div key={index}>
           <LocationTree
             location={item.location}
             startTime={item.start_datetime}
             endTime={item.end_datetime}
-            isLatest={index === latestIndex}
+            isLatest={index === 0}
             showTimeline
-            associationStatus={item.status}
           />
         </div>
       ))}

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -13,10 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ConfirmActionDialog from "@/components/Common/ConfirmActionDialog";
 
 import { EncounterRead } from "@/types/emr/encounter/encounter";
-import {
-  LocationAssociationRead,
-  LocationAssociationStatus,
-} from "@/types/location/association";
+import { LocationAssociationRead } from "@/types/location/association";
 import { LocationRead } from "@/types/location/location";
 
 import { useLocationAssignment } from "@/components/Location/hooks/useLocationAssignment";
@@ -63,7 +60,7 @@ export function LocationSheet({
   const mutations = useLocationMutations(encounter.id);
 
   // Derived state
-  const { currentLocation, reservedLocations, plannedLocations } = useMemo(
+  const { currentLocation, activeLocations, plannedLocations } = useMemo(
     () => getCurrentLocations(encounter),
     [encounter],
   );
@@ -77,7 +74,7 @@ export function LocationSheet({
 
   // Reset handlers
   const resetAll = () => {
-    navigation.goBack();
+    navigation.resetNavigation();
     assignment.resetToInitial();
   };
 
@@ -117,11 +114,7 @@ export function LocationSheet({
 
   // Assignment action handlers
   const handleMove = () => {
-    assignment.browseBeds("move");
-  };
-
-  const handleAddBed = () => {
-    assignment.browseBeds("assign");
+    assignment.startMove();
   };
 
   const handleCompleteBedStay = (location: LocationAssociationRead) => {
@@ -141,16 +134,12 @@ export function LocationSheet({
     );
   };
 
-  const handleAssignNowPlanned = (location: LocationAssociationRead) => {
-    assignment.promotePlanned(location.id, "active");
+  const handleAssignNowPlanned = (plannedLocation: LocationAssociationRead) => {
+    assignment.startAssigningPlanned(plannedLocation.id, "active");
   };
 
-  const handleAssignNowReserved = (location: LocationAssociationRead) => {
-    assignment.promoteReserved(location.id, new Date(location.start_datetime));
-  };
-
-  const handleCancelBed = (
-    status: LocationAssociationStatus,
+  const handleCancelPlan = (
+    status: "active" | "planned",
     locationToCancel: LocationAssociationRead,
   ) => {
     dialogs.openDeleteDialog(
@@ -181,6 +170,28 @@ export function LocationSheet({
       );
     }
 
+    if (locationBeingDeleted?.status === "active") {
+      activeLocations
+        .filter((loc) => loc.id !== locationBeingDeleted?.id)
+        .filter((loc) => loc.status === "reserved")
+        .forEach((reservedLocation) => {
+          requests.push(
+            createDeleteLocationAssociationRequest(
+              reservedLocation.location.id,
+              reservedLocation.id,
+              facilityId,
+            ),
+          );
+          requests.push(
+            createLocationUpdateOperationalStatusRequest(
+              reservedLocation.location,
+              facilityId,
+              "U",
+            ),
+          );
+        });
+    }
+
     // Delete the location association
     requests.push(
       createDeleteLocationAssociationRequest(
@@ -198,14 +209,17 @@ export function LocationSheet({
 
   // Confirm time for new/move assignment
   const handleConfirmTime = async (
-    existingLocation?: LocationAssociationRead,
+    currentPlannedLocation?: LocationAssociationRead,
   ) => {
     const requests = [];
-    const selectedBed = navigation.selectedBed;
-    const action = assignment.sheetState.action;
-
-    // Handle current location for move/promote actions
-    if (currentLocation && (action === "move" || action === "promote")) {
+    const selectedBed = navigation.selectedBed || navigation.selectedLinkedBed;
+    if (
+      currentLocation &&
+      ((assignment.sheetState.action === "move" &&
+        assignment.sheetState.timeConfig.status === "active") ||
+        assignment.sheetState.action === "complete" ||
+        (assignment.sheetState.action === "new" && currentPlannedLocation))
+    ) {
       // Complete current location if keepBedActive is unchecked
       if (!assignment.keepBedActive) {
         requests.push(
@@ -223,7 +237,9 @@ export function LocationSheet({
             "U",
           ),
         );
-      } else {
+      }
+      // Update current location to reserved if keepBedActive is checked
+      else {
         requests.push(
           createLocationAssociationUpdateRequest(
             currentLocation,
@@ -239,35 +255,32 @@ export function LocationSheet({
       }
     }
 
-    if (action === "assign" || action === "move") {
-      // Create new location association
-      if (selectedBed) {
-        requests.push(
-          createLocationAssociationRequest(
-            selectedBed.id,
-            assignment.sheetState.timeConfig,
-            facilityId,
-            encounter.id,
-          ),
-        );
-        requests.push(
-          createLocationUpdateOperationalStatusRequest(
-            selectedBed as LocationRead,
-            facilityId,
-            "O",
-          ),
-        );
-      }
-    } else if (action === "promote" && existingLocation) {
-      // Update planned/reserved location to active
-      const isReservedPromotion = existingLocation.status === "reserved";
+    // Create new location association
+    if (selectedBed) {
+      requests.push(
+        createLocationAssociationRequest(
+          selectedBed.id,
+          assignment.sheetState.timeConfig,
+          facilityId,
+          encounter.id,
+        ),
+      );
+      // Mark location as occupied for active assignments
+      requests.push(
+        createLocationUpdateOperationalStatusRequest(
+          selectedBed as LocationRead,
+          facilityId,
+          "O",
+        ),
+      );
+    }
+    // Update planned location to active
+    else if (assignment.sheetState.action === "new" && currentPlannedLocation) {
       requests.push(
         createLocationAssociationUpdateRequest(
-          existingLocation,
+          currentPlannedLocation,
           {
-            start: isReservedPromotion
-              ? new Date(existingLocation.start_datetime)
-              : new Date(),
+            start: new Date(),
             status: "active",
           },
           facilityId,
@@ -276,7 +289,7 @@ export function LocationSheet({
       );
       requests.push(
         createLocationUpdateOperationalStatusRequest(
-          existingLocation.location,
+          currentPlannedLocation.location,
           facilityId,
           "O",
         ),
@@ -351,11 +364,11 @@ export function LocationSheet({
           ),
         );
 
-        reservedLocations.forEach((reservedLocation) => {
-          if (reservedLocation.status === "reserved") {
+        activeLocations.forEach((activeLocation) => {
+          if (activeLocation.status === "reserved") {
             requests.push(
               completeCurrentLocationAssociation(
-                reservedLocation,
+                activeLocation,
                 facilityId,
                 encounter.id,
                 new Date(),
@@ -363,7 +376,7 @@ export function LocationSheet({
             );
             requests.push(
               createLocationUpdateOperationalStatusRequest(
-                reservedLocation.location,
+                activeLocation.location,
                 facilityId,
                 "U",
               ),
@@ -387,23 +400,109 @@ export function LocationSheet({
     }
   };
 
+  const handleAssignLinkedBed = async (location: LocationAssociationRead) => {
+    const requests = [];
+    if (currentLocation && assignment.sheetState.action === "move") {
+      if (assignment.keepBedActive) {
+        requests.push(
+          createLocationAssociationUpdateRequest(
+            currentLocation,
+            {
+              start: new Date(currentLocation.start_datetime),
+              end: undefined,
+              status: "reserved",
+            },
+            facilityId,
+            encounter.id,
+          ),
+        );
+        requests.push(
+          createLocationUpdateOperationalStatusRequest(
+            currentLocation.location,
+            facilityId,
+            "O",
+          ),
+        );
+      } else {
+        requests.push(
+          completeCurrentLocationAssociation(
+            currentLocation,
+            facilityId,
+            encounter.id,
+            new Date(),
+          ),
+        );
+        requests.push(
+          createLocationUpdateOperationalStatusRequest(
+            currentLocation.location,
+            facilityId,
+            "U",
+          ),
+        );
+      }
+
+      requests.push(
+        createLocationAssociationUpdateRequest(
+          location,
+          {
+            start: new Date(location.start_datetime || new Date()),
+            end: undefined,
+            status: "active",
+          },
+          facilityId,
+          encounter.id,
+        ),
+      );
+    }
+
+    if (requests.length > 0) {
+      await mutations.executeBatch.mutateAsync({ requests });
+      resetAll();
+    }
+  };
+
   // Navigation handlers
-  const handleAddReserved = () => {
-    assignment.confirmBedSelection("reserved", !!currentLocation);
+  const handleGoBack = () => {
+    if (assignment.sheetState.screen === "modify") {
+      assignment.setScreenToAssign();
+    } else {
+      navigation.goBack();
+    }
+    navigation.clearBedSelection();
   };
 
   const handleScheduleForLater = () => {
-    assignment.confirmBedSelection("planned", !!currentLocation);
+    assignment.startNewAssignment("planned", !!currentLocation);
   };
 
   const handleAssignNow = () => {
-    assignment.confirmBedSelection("active", !!currentLocation);
+    assignment.startNewAssignment("active", !!currentLocation);
   };
 
   const getDeleteDialogDescription = () => {
+    const isReservedBed = activeLocations.some(
+      (loc) =>
+        loc.id === dialogs.locationToDelete?.associationId &&
+        loc.status === "reserved",
+    );
     if (dialogs.locationToDelete?.status === "active") {
-      return t("are_you_sure_mark_as_error_active_bed");
-    } else if (dialogs.locationToDelete?.status === "reserved") {
+      return activeLocations.length > 0 ? (
+        <Trans
+          i18nKey="are_you_sure_mark_as_error_multiple_beds"
+          values={{
+            beds: activeLocations.map((loc) => loc.location.name).join(", "),
+          }}
+          components={{
+            strong: (
+              <strong className="inline-block align-bottom truncate max-w-72 sm:max-w-full md:max-w-full lg:max-w-full xl:max-w-full" />
+            ),
+            br: <br />,
+          }}
+        />
+      ) : (
+        t("are_you_sure_mark_as_error_active_bed")
+      );
+    } else if (isReservedBed) {
       return t("are_you_sure_cancel_reserved_bed");
     }
     return t("are_you_sure_cancel_planned_bed");
@@ -419,21 +518,19 @@ export function LocationSheet({
     keepBedActive: assignment.keepBedActive,
     onKeepBedActiveChange: assignment.setKeepBedActive,
     onMove: handleMove,
-    onAddBed: handleAddBed,
     onComplete: handleCompleteBedStay,
     onUpdateTime: handleUpdateTime,
-    onCancelBed: handleCancelBed,
+    onCancel: handleCancelPlan,
     onCancelEdit: assignment.resetEditingState,
     onConfirmEdit: handleConfirmEdit,
     onConfirmTime: handleConfirmTime,
-    onAssignNowPlanned: handleAssignNowPlanned,
-    onAssignNowReserved: handleAssignNowReserved,
-    resetScreen: resetAll,
+    onAssignLinkedBed: handleAssignLinkedBed,
   };
 
   const navigationHandlers = {
     onLocationClick: navigation.handleLocationClick,
     onBedSelect: navigation.setSelectedBed,
+    onLinkedBedSelect: navigation.handleLinkedBedClick,
     onCheckBedStatus: handleCheckBedStatus,
     onSearchChange: navigation.setSearchTerm,
     onSearch: navigation.handleSearch,
@@ -444,9 +541,9 @@ export function LocationSheet({
     },
     onLoadMore: navigation.handleLoadMore,
     onClearSelection: navigation.clearBedSelection,
-    onGoBack: navigation.goBack,
+    onGoBack: handleGoBack,
+    onAssignNowPlanned: handleAssignNowPlanned,
     onScheduleForLater: handleScheduleForLater,
-    onAddReservedBed: handleAddReserved,
     onAssignNow: handleAssignNow,
     showAvailableOnly: navigation.showAvailableOnly,
     searchTerm: navigation.searchTerm,
@@ -465,13 +562,13 @@ export function LocationSheet({
           <LocationModifyView
             currentLocation={currentLocation}
             plannedLocations={plannedLocations}
-            reservedLocations={reservedLocations}
             selectedBedLocation={selectedBedLocation}
+            selectedLinkedBed={navigation.selectedLinkedBed}
             assignmentHandlers={assignmentHandlers}
+            onAssignNowPlanned={handleAssignNowPlanned}
           />
         );
 
-      case "overview":
       case "assign":
       default:
         return (
@@ -481,9 +578,10 @@ export function LocationSheet({
             selectedLocation={navigation.selectedLocation}
             locationHistory={navigation.locationHistory}
             selectedBed={navigation.selectedBed}
+            selectedLinkedBed={navigation.selectedLinkedBed || null}
             currentLocation={currentLocation}
             plannedLocations={plannedLocations}
-            reservedLocations={reservedLocations}
+            activeLocations={activeLocations}
             isPending={mutations.isPending}
             assignmentHandlers={assignmentHandlers}
             navigationHandlers={navigationHandlers}

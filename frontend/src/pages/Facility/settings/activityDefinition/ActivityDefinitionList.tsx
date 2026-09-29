@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import Page from "@/components/Common/Page";
 import { ResourceCategoryList } from "@/components/Common/ResourceCategoryList";
-import { ActivityDefinitionListContent } from "@/pages/Facility/settings/activityDefinition/ActivityDefinitionListComponent";
+import { ActivityDefinitionList as ActivityDefinitionListComponent } from "@/pages/Facility/settings/activityDefinition/ActivityDefinitionListComponent";
 import { ResourceCategoryResourceType } from "@/types/base/resourceCategory/resourceCategory";
 import { Status } from "@/types/emr/activityDefinition/activityDefinition";
 import activityDefinitionApi from "@/types/emr/activityDefinition/activityDefinitionApi";
@@ -46,7 +46,6 @@ export default function ActivityDefinitionList({
         onCreateItem={onCreateItem}
         createItemLabel={t("add_activity_definition")}
         createItemIcon="l-plus"
-        emptyStateTitle={t("no_activity_definition_categories_found")}
         itemSearchConfig={{
           listItems: {
             queryFn: activityDefinitionApi.listActivityDefinition,
@@ -58,7 +57,7 @@ export default function ActivityDefinitionList({
         }}
       >
         {categorySlug && (
-          <ActivityDefinitionListContent
+          <ActivityDefinitionListComponent
             facilityId={facilityId}
             categorySlug={categorySlug}
             setAllowCategoryCreate={setAllowCategoryCreate}

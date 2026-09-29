@@ -1,5 +1,4 @@
-import { format } from "date-fns";
-import { Loader2 } from "lucide-react";
+import { ChevronLeft, Loader2 } from "lucide-react";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -27,7 +26,7 @@ interface EditingState {
 }
 
 interface LocationCardWrapperProps {
-  location: LocationAssociationRead;
+  locationHistory: LocationAssociationRead;
   status: LocationAssociationStatus;
   children?: React.ReactNode;
   editingState: EditingState;
@@ -35,15 +34,16 @@ interface LocationCardWrapperProps {
   handleCancelEdit: () => void;
   handleConfirmEdit: (location: LocationAssociationRead) => void;
   isPending: boolean;
+  showBackButton?: boolean;
   title?: string;
   keepBedActive?: boolean;
   onKeepBedActiveChange?: (value: boolean) => void;
+  areLinkedLocations?: boolean;
   onComplete?: (location: LocationAssociationRead) => void;
-  readOnly?: boolean;
 }
 
 export function LocationCardWrapper({
-  location,
+  locationHistory,
   status,
   children,
   editingState,
@@ -51,14 +51,15 @@ export function LocationCardWrapper({
   handleCancelEdit,
   handleConfirmEdit,
   isPending,
+  showBackButton,
   title,
   keepBedActive,
   onKeepBedActiveChange,
+  areLinkedLocations = false,
   onComplete,
-  readOnly = false,
 }: LocationCardWrapperProps) {
   const { t } = useTranslation();
-  const isEditing = editingState.locationId === location.id;
+  const isEditing = editingState.locationId === locationHistory.id;
   const isCompletingStay =
     isEditing && editingState.timeConfig.status === "completed";
   const showEndTimeField =
@@ -89,7 +90,7 @@ export function LocationCardWrapper({
 
   const handleConfirm = () => {
     if (!validateDates()) return;
-    handleConfirmEdit(location);
+    handleConfirmEdit(locationHistory);
   };
 
   const getTitle = () => {
@@ -101,29 +102,40 @@ export function LocationCardWrapper({
 
   return (
     <div className="space-y-4">
+      {showBackButton && (
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={handleCancelEdit}>
+            <ChevronLeft className="size-4" />
+          </Button>
+          <h3 className="text-lg font-semibold">{title}</h3>
+        </div>
+      )}
+
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between">
           <h3 className="text-base font-semibold">{getTitle()}</h3>
-          <div className="flex items-center gap-2 mb-1">
-            {onComplete && (
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => onComplete(location)}
-              >
-                {t("complete_patient_stay")}
-              </Button>
-            )}
-          </div>
+
+          {onComplete && (
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => onComplete(locationHistory)}
+              className="self-end mb-1"
+            >
+              {t("complete_patient_stay")}
+            </Button>
+          )}
         </div>
         <div
           className={cn(
             "flex gap-2 border border-gray-200 rounded-lg bg-gray-50 px-2 py-1",
-            "flex-col justify-between",
+            areLinkedLocations && !isEditing
+              ? "flex-row items-start"
+              : "flex-col justify-between",
           )}
         >
           <LocationCard
-            locationHistory={location}
+            locationHistory={locationHistory}
             status={status}
             keepBedActive={keepBedActive}
             onKeepBedActiveChange={onKeepBedActiveChange}
@@ -136,7 +148,6 @@ export function LocationCardWrapper({
                   <div className="space-y-2">
                     <Label>{t("end_time")}</Label>
                     <DateTimeInput
-                      max={format(new Date(), "yyyy-MM-dd'T'HH:mm")}
                       value={
                         editingState.timeConfig.end?.toISOString() ??
                         new Date().toISOString()
@@ -158,7 +169,6 @@ export function LocationCardWrapper({
                   <div className="space-y-2">
                     <Label>{t("start_time")}</Label>
                     <DateTimeInput
-                      disabled={readOnly}
                       value={editingState.timeConfig.start?.toISOString()}
                       onDateChange={(newISO) =>
                         newISO !== undefined &&
@@ -177,7 +187,6 @@ export function LocationCardWrapper({
                       <div className="space-y-2">
                         <Label>{t("end_time")}</Label>
                         <DateTimeInput
-                          disabled={readOnly}
                           value={editingState.timeConfig.end?.toISOString()}
                           onDateChange={(newISO) =>
                             setEditingState((prev) => ({

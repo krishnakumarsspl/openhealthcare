@@ -26,10 +26,6 @@ import {
   MedicationRequestRead,
   displayMedicationName,
 } from "@/types/emr/medicationRequest/medicationRequest";
-import {
-  type AdministrableProductType,
-  ProductKnowledgeType,
-} from "@/types/inventory/productKnowledge/productKnowledge";
 
 import { MedicineAdminForm } from "./MedicineAdminForm";
 import {
@@ -45,7 +41,6 @@ interface Props {
   lastAdministeredDates?: Record<string, string>;
   patientId: string;
   encounterId: string;
-  productType: AdministrableProductType;
   selectedGroup?: GroupedMedication;
 }
 
@@ -58,7 +53,6 @@ interface MedicineListItemProps {
   lastAdministeredBy?: string;
   onAdministrationChange: (request: MedicationAdministrationRequest) => void;
   isValid: (valid: boolean) => void;
-  productType: AdministrableProductType;
 }
 
 const MedicineListItem = ({
@@ -70,7 +64,6 @@ const MedicineListItem = ({
   lastAdministeredBy,
   onAdministrationChange,
   isValid,
-  productType,
 }: MedicineListItemProps) => {
   const { t } = useTranslation();
 
@@ -88,11 +81,6 @@ const MedicineListItem = ({
               </span>
             )}
           </div>
-          {medicine.note && (
-            <p className="text-sm text-gray-500 italic whitespace-pre-wrap break-words">
-              {medicine.note}
-            </p>
-          )}
         </div>
         <div className="mt-1 mr-6">
           <Checkbox
@@ -118,7 +106,6 @@ const MedicineListItem = ({
               administrationRequest={administrationRequest}
               onChange={onAdministrationChange}
               isValid={isValid}
-              productType={productType}
             />
           )}
         </div>
@@ -135,7 +122,6 @@ export function MedicineAdminSheet({
   patientId,
   encounterId,
   selectedGroup,
-  productType,
 }: Props) {
   const { t } = useTranslation();
 
@@ -171,13 +157,7 @@ export function MedicineAdminSheet({
       pathParams: { patientId },
     }),
     onSuccess: () => {
-      toast.success(
-        t(
-          productType === ProductKnowledgeType.medication
-            ? "medication_administration_saved"
-            : "nutritional_product_administration_saved",
-        ),
-      );
+      toast.success(t("medication_administration_saved"));
       handleClose();
     },
   });
@@ -211,7 +191,7 @@ export function MedicineAdminSheet({
     [medications, encounterId],
   );
 
-  const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const administrations = Array.from(selectedMedicines).map(
       (id) => administrationRequests[id],
@@ -266,9 +246,7 @@ export function MedicineAdminSheet({
         >
           <SheetHeader className="space-y-4 shrink-0 mr-2">
             <SheetTitle className="text-xl">
-              {productType === ProductKnowledgeType.medication
-                ? t("administer_medicines")
-                : t("record_intake")}
+              {t("administer_medicines")}
             </SheetTitle>
           </SheetHeader>
 
@@ -286,7 +264,6 @@ export function MedicineAdminSheet({
                     handleAdministrationChange(medicine.id, request)
                   }
                   isValid={(valid) => handleFormValidation(medicine.id, valid)}
-                  productType={productType}
                 />
               ))}
             </div>
@@ -310,11 +287,7 @@ export function MedicineAdminSheet({
               >
                 {isPending
                   ? t("saving")
-                  : `${
-                      productType === ProductKnowledgeType.medication
-                        ? t("administer_medicines")
-                        : t("record_intake")
-                    } (${selectedMedicines.size})`}
+                  : `${t("administer_medicines")} (${selectedMedicines.size})`}
               </Button>
             </div>
           </SheetFooter>

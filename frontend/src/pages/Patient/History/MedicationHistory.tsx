@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { TableSkeleton } from "@/components/Common/SkeletonLoading";
 import { AdministrationTab } from "@/components/Medicine/MedicationAdministration/AdministrationTab";
-import { MedicationRequestEmptyState as EmptyState } from "@/components/Medicine/MedicationRequestTable";
+import { EmptyState } from "@/components/Medicine/MedicationRequestTable";
 import { MedicationsTable } from "@/components/Medicine/MedicationsTable";
 import { MedicationStatementList } from "@/components/Patient/MedicationStatementList";
 

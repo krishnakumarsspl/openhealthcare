@@ -170,7 +170,7 @@ export default function PatientHome() {
                     onSuccess={(encounter) => {
                       if (isDispenseFlow && pharmacyDispenseService) {
                         navigate(
-                          `/facility/${facilityId}/locations/${pharmacyDispenseService.locationId}/medication_requests/patient/${patientData.id}/bill/dispense/${encounter.id}`,
+                          `/facility/${facilityId}/locations/${pharmacyDispenseService.locationId}/medication_requests/patient/${patientData.id}/bill?encounterId=${encounter.id}`,
                         );
                       }
                     }}
@@ -222,11 +222,6 @@ export default function PatientHome() {
                   actionId="view-the-accounts"
                   href={`/facility/${facilityId}/billing/account?status=active&patient_filter=${patientData.id}&patient_name=${patientData.name}`}
                 />
-                <PLUGIN_Component
-                  __name="PatientHomeQuickActions"
-                  patient={patientData}
-                  facilityId={facilityId}
-                />
               </div>
 
               <PatientHomeTabs
@@ -243,7 +238,7 @@ export default function PatientHome() {
                     {flow === "dispense" && pharmacyDispenseService && (
                       <Button variant="outline">
                         <Link
-                          href={`/facility/${facilityId}/locations/${pharmacyDispenseService.locationId}/medication_requests/patient/${patientData.id}/bill/dispense/${encounter.id}`}
+                          href={`/facility/${facilityId}/locations/${pharmacyDispenseService.locationId}/medication_requests/patient/${patientData.id}/bill?encounterId=${encounter.id}`}
                           className="flex items-center gap-2"
                         >
                           <span>{t("dispense_medicine")}</span>

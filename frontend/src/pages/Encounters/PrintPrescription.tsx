@@ -28,6 +28,7 @@ export const PrintPrescription = ({
       queryFn: query.paginated(prescriptionApi.list, {
         pathParams: { patientId: patientId! },
         queryParams: { encounter: encounterId, facility: facilityId },
+        pageSize: 100,
       }),
       enabled: !!encounterId && !!patientId && !!facilityId,
     });

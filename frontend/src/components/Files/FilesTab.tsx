@@ -3,12 +3,12 @@ import { useQueryParams } from "raviger";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+import { DrawingPage } from "@/components/Files/DrawingSubTab";
 import { FilesPage } from "@/components/Files/FileSubTab";
 
 import { getPermissions } from "@/common/Permissions";
 
 import { usePermissions } from "@/context/PermissionContext";
-import { useCareAppTabs } from "@/hooks/useCareApps";
 import {
   EncounterRead,
   inactiveEncounterStatus,
@@ -18,12 +18,19 @@ import { ReportType } from "@/types/emr/report/report";
 import { FileType } from "@/types/files/file";
 import { ReportSubTab } from "./ReportSubTab";
 
-export interface FilesTabsProps {
+interface FilesTabsProps {
   type: FileType.ENCOUNTER | FileType.PATIENT;
   encounter?: EncounterRead;
   patient?: PatientRead;
   readOnly?: boolean;
 }
+
+type QueryParams = {
+  file: "all" | "reports" | "drawings";
+};
+
+const allowedTabs = ["all", "reports", "drawings"] as const;
+type TabType = (typeof allowedTabs)[number];
 
 export const FilesTab = ({
   patient,
@@ -31,7 +38,7 @@ export const FilesTab = ({
   encounter,
   readOnly,
 }: FilesTabsProps) => {
-  const [qParams, setQParams] = useQueryParams();
+  const [qParams, setQParams] = useQueryParams<QueryParams>();
 
   const { hasPermission } = usePermissions();
   const { canWritePatient } = getPermissions(
@@ -43,9 +50,9 @@ export const FilesTab = ({
     encounter?.permissions ?? [],
   );
 
-  const pluginTabs = useCareAppTabs<FilesTabsProps>("encounterFileTabs");
-  const allowedTabs = ["all", "reports", ...Object.keys(pluginTabs)];
-  const tabValue = allowedTabs.includes(qParams.file) ? qParams.file : "all";
+  const tabValue: TabType = allowedTabs.includes(qParams.file)
+    ? qParams.file
+    : "all";
 
   const canWriteCurrentEncounter =
     canWriteEncounter &&
@@ -66,9 +73,9 @@ export const FilesTab = ({
     <div className="space-y-4">
       <Tabs
         value={tabValue}
-        onValueChange={(value) =>
-          setQParams({ file: value }, { overwrite: false })
-        }
+        onValueChange={(value) => {
+          setQParams({ file: value as TabType }, { overwrite: false });
+        }}
       >
         <TabsList className={type != "encounter" ? "mt-2" : ""}>
           <TabsTrigger
@@ -83,15 +90,12 @@ export const FilesTab = ({
           >
             {t("reports")}
           </TabsTrigger>
-          {Object.keys(pluginTabs).map((tab) => (
-            <TabsTrigger
-              key={tab}
-              value={tab}
-              className="data-[state=active]:bg-white rounded-md px-4 font-semibold capitalize"
-            >
-              {t(tab)}
-            </TabsTrigger>
-          ))}
+          <TabsTrigger
+            value="drawings"
+            className="data-[state=active]:bg-white rounded-md px-4 font-semibold"
+          >
+            {t("drawings")}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="all">
@@ -118,18 +122,17 @@ export const FilesTab = ({
           />
         </TabsContent>
 
-        {Object.entries(pluginTabs).map(([pluginName, Component]) => {
-          return (
-            <TabsContent key={pluginName} value={pluginName}>
-              <Component
-                type={type}
-                patient={patient}
-                encounter={encounter}
-                readOnly={readOnly}
-              />
-            </TabsContent>
-          );
-        })}
+        <TabsContent value="drawings">
+          <div>
+            <DrawingPage
+              type={type}
+              {...(type === FileType.PATIENT
+                ? { patientId: patient?.id }
+                : { encounter: encounter })}
+              readOnly={readOnly}
+            />
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   );

@@ -20,10 +20,6 @@ import {
   MedicationRequestRead,
   displayMedicationName,
 } from "@/types/emr/medicationRequest/medicationRequest";
-import {
-  type AdministrableProductType,
-  ProductKnowledgeType,
-} from "@/types/inventory/productKnowledge/productKnowledge";
 
 import { GroupedMedication } from "./utils";
 
@@ -34,22 +30,12 @@ interface DiscontinueConfirmDialogProps {
   group?: GroupedMedication | null;
   onConfirm: () => void;
   isPending?: boolean;
-  productType: AdministrableProductType;
 }
 
 export const DiscontinueConfirmDialog: React.FC<
   DiscontinueConfirmDialogProps
-> = ({
-  open,
-  onOpenChange,
-  medication,
-  group,
-  onConfirm,
-  isPending,
-  productType,
-}) => {
+> = ({ open, onOpenChange, medication, group, onConfirm, isPending }) => {
   const { t } = useTranslation();
-  const isMedication = productType === ProductKnowledgeType.medication;
 
   // Count active requests in group
   const activeCount = group
@@ -61,34 +47,19 @@ export const DiscontinueConfirmDialog: React.FC<
     : 0;
 
   const title = group
-    ? isMedication
-      ? t("discontinue_medication_group_title", {
-          product: group.productName,
-        })
-      : t("discontinue_nutritional_product_group_title", {
-          product: group.productName,
-        })
-    : isMedication
-      ? t("discontinue_medication")
-      : t("discontinue_nutritional_product");
+    ? t("discontinue_medication_group_title", {
+        product: group.productName,
+      })
+    : t("discontinue_medication");
 
   const description = group
-    ? isMedication
-      ? t("discontinue_medication_group_description", {
-          count: activeCount,
-          product: group.productName,
-        })
-      : t("discontinue_nutritional_product_group_description", {
-          count: activeCount,
-          product: group.productName,
-        })
-    : isMedication
-      ? t("discontinue_medication_description", {
-          medication: medication ? displayMedicationName(medication) : "",
-        })
-      : t("discontinue_nutritional_product_description", {
-          medication: medication ? displayMedicationName(medication) : "",
-        });
+    ? t("discontinue_medication_group_description", {
+        count: activeCount,
+        product: group.productName,
+      })
+    : t("discontinue_medication_description", {
+        medication: medication ? displayMedicationName(medication) : "",
+      });
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>

@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 import InvoicesData from "./InvoicesData";
 
-function InvoiceList({
+export function InvoiceList({
   facilityId,
   accountId,
 }: {

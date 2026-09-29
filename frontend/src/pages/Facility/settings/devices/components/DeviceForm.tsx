@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { isFuture } from "date-fns";
 import { useQueryParams } from "raviger";
 import { useEffect, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
@@ -71,7 +72,7 @@ export default function DeviceForm({ facilityId, device, onSuccess }: Props) {
         .date()
         .optional()
         .refine(
-          (date) => !date || date <= new Date(),
+          (date) => !date || !isFuture(date),
           t("manufacture_date_cannot_be_in_future"),
         ),
       expiration_date: z.date().optional(),
@@ -92,7 +93,7 @@ export default function DeviceForm({ facilityId, device, onSuccess }: Props) {
           if (normalizedValue) {
             if (valueMap.has(normalizedValue)) {
               ctx.addIssue({
-                code: "custom",
+                code: z.ZodIssueCode.custom,
                 message: t("duplicate_contact_values_not_allowed"),
                 path: [index, "value"],
               });

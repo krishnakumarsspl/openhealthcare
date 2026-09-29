@@ -1,6 +1,6 @@
 import { useAtom } from "jotai";
 import { ChevronRight } from "lucide-react";
-import { ActiveLink, useFullPath, usePath } from "raviger";
+import { ActiveLink, useFullPath } from "raviger";
 import { Fragment, ReactNode, useMemo, useState } from "react";
 
 import { navExpansionAtom } from "@/atoms/navExpansionAtom";
@@ -54,51 +54,9 @@ export interface NavigationLink {
   children?: NavigationLink[];
 }
 
-function NavLink({
-  href,
-  isSelected,
-  activeClass,
-  exactActiveClass,
-  className,
-  onClick,
-  children,
-}: {
-  href: string;
-  isSelected: boolean;
-  activeClass?: string;
-  exactActiveClass?: string;
-  className?: string;
-  onClick?: (e: React.MouseEvent) => void;
-  children: ReactNode;
-}) {
-  const resolvedExact = exactActiveClass ?? activeClass;
-  const { toggleSidebar, isMobile } = useSidebar();
-
-  return (
-    <ActiveLink
-      href={href}
-      className={className}
-      activeClass={activeClass}
-      exactActiveClass={resolvedExact}
-      onClick={(e) => {
-        if (isSelected) {
-          e.preventDefault();
-          if (isMobile) {
-            toggleSidebar();
-          }
-        }
-        onClick?.(e);
-      }}
-    >
-      {children}
-    </ActiveLink>
-  );
-}
-
 export function NavMain({ links }: { links: NavigationLink[] }) {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
-  const path = usePath();
 
   const fullPath = useFullPath();
   const fullPathMap = useMemo(
@@ -113,10 +71,6 @@ export function NavMain({ links }: { links: NavigationLink[] }) {
     [fullPath],
   );
 
-  const isSelected = (url: string) => {
-    return path === url;
-  };
-
   return (
     <SidebarGroup>
       <SidebarMenu>
@@ -128,11 +82,7 @@ export function NavMain({ links }: { links: NavigationLink[] }) {
                 isCollapsed ? (
                   <PopoverMenu link={link} />
                 ) : (
-                  <CollapsibleNavItem
-                    link={link}
-                    fullPathMap={fullPathMap}
-                    path={path}
-                  />
+                  <CollapsibleNavItem link={link} fullPathMap={fullPathMap} />
                 )
               ) : (
                 <SidebarMenuItem>
@@ -143,10 +93,10 @@ export function NavMain({ links }: { links: NavigationLink[] }) {
                       "text-gray-600 transition font-normal hover:bg-gray-200 hover:text-green-700"
                     }
                   >
-                    <NavLink
+                    <ActiveLink
                       href={link.url}
-                      isSelected={isSelected(link.url)}
                       activeClass="bg-white text-green-700 shadow-sm"
+                      exactActiveClass="bg-white text-green-700 shadow-sm"
                     >
                       {link.icon ? (
                         link.icon
@@ -160,7 +110,7 @@ export function NavMain({ links }: { links: NavigationLink[] }) {
                       <span className="group-data-[collapsible=icon]:hidden ml-1">
                         {link.name}
                       </span>
-                    </NavLink>
+                    </ActiveLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
@@ -174,15 +124,11 @@ export function NavMain({ links }: { links: NavigationLink[] }) {
 function CollapsibleNavItem({
   link,
   fullPathMap,
-  path,
 }: {
   link: NavigationLink;
   fullPathMap: Record<string, boolean>;
-  path: string | null;
 }) {
   const [isOpen, handleOpenChange] = useNavExpansionState(link.name, link);
-
-  const isSubItemSelected = (url: string) => path === url;
 
   return (
     <Collapsible
@@ -229,9 +175,8 @@ function CollapsibleNavItem({
                         "text-gray-600 transition font-normal hover:bg-gray-200 hover:text-green-700"
                       }
                     >
-                      <NavLink
+                      <ActiveLink
                         href={subItem.url}
-                        isSelected={isSubItemSelected(subItem.url)}
                         className="w-full"
                         activeClass={cn(
                           subItem.url
@@ -242,7 +187,7 @@ function CollapsibleNavItem({
                         exactActiveClass="bg-white text-green-700 shadow"
                       >
                         {subItem.name}
-                      </NavLink>
+                      </ActiveLink>
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
                 </Fragment>
@@ -251,29 +196,6 @@ function CollapsibleNavItem({
         </CollapsibleContent>
       </SidebarMenuItem>
     </Collapsible>
-  );
-}
-
-function NavItem({
-  item,
-  setOpen,
-}: {
-  item: NavigationLink;
-  setOpen: (open: boolean) => void;
-}) {
-  const path = usePath();
-  const selected = path === item.url;
-
-  return (
-    <NavLink
-      href={item.url}
-      isSelected={selected}
-      className="w-full rounded-md px-2 py-1.5 text-sm outline-none transition-colors hover:bg-gray-100 focus:bg-gray-100"
-      activeClass="bg-gray-100 text-green-700"
-      onClick={() => setOpen(false)}
-    >
-      {item.name}
-    </NavLink>
   );
 }
 
@@ -307,7 +229,16 @@ function PopoverMenu({ link }: { link: NavigationLink }) {
       >
         <div className="flex flex-col gap-1">
           {link.children?.map((subItem) => (
-            <NavItem key={subItem.name} item={subItem} setOpen={setOpen} />
+            <ActiveLink
+              key={subItem.name}
+              href={subItem.url}
+              onClick={() => setOpen(false)}
+              className="w-full rounded-md px-2 py-1.5 text-sm outline-none transition-colors hover:bg-gray-100 focus:bg-gray-100"
+              activeClass="bg-gray-100 text-green-700"
+              exactActiveClass="bg-gray-100 text-green-700"
+            >
+              {subItem.name}
+            </ActiveLink>
           ))}
         </div>
       </PopoverContent>

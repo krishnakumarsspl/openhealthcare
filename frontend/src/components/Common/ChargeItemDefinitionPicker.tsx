@@ -35,7 +35,9 @@ interface ChargeItemDefinitionPickerProps {
   value: ChargeItemDefinitionBase | ChargeItemDefinitionBase[] | undefined;
   onValueChange: (
     definitions:
-      ChargeItemDefinitionBase | ChargeItemDefinitionBase[] | undefined,
+      | ChargeItemDefinitionBase
+      | ChargeItemDefinitionBase[]
+      | undefined,
   ) => void;
   placeholder?: string;
   disabled?: boolean;

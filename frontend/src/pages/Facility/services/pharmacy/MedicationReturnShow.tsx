@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 import {
   ChevronLeft,
+  Edit,
   EllipsisVertical,
   ExternalLink,
   MoreVertical,
@@ -44,7 +45,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 import { AddMedicationReturnItemForm } from "@/pages/Facility/services/pharmacy/components/AddMedicationReturnItemForm";
 import { MedicationReturnItemsTable } from "@/pages/Facility/services/pharmacy/components/MedicationReturnItemsTable";
-import { MEDICATION_DISPENSE_CANCELLED_STATUSES } from "@/types/emr/medicationDispense/medicationDispense";
 import medicationDispenseApi from "@/types/emr/medicationDispense/medicationDispenseApi";
 import {
   DELIVERY_ORDER_STATUS_COLORS,
@@ -81,8 +81,13 @@ export default function MedicationReturnShow({
     status: SupplyDeliveryStatus.completed,
     condition: SupplyDeliveryCondition.normal,
   });
-  const [enteredInErrorDialogOpen, setEnteredInErrorDialogOpen] =
-    useState(false);
+  const [deliveryOrderStatusDialog, setDeliveryOrderStatusDialog] = useState<{
+    open: boolean;
+    status: DeliveryOrderStatus | null;
+  }>({
+    open: false,
+    status: null,
+  });
   const [{ dispenseOrderIds: dispenseOrderIdsParam }] = useQueryParams<{
     dispenseOrderIds?: string;
   }>();
@@ -141,9 +146,7 @@ export default function MedicationReturnShow({
       queryClient.invalidateQueries({
         queryKey: ["medicationReturns", deliveryOrderId],
       });
-      queryClient.invalidateQueries({
-        queryKey: ["supplyDeliveries", deliveryOrderId],
-      });
+
       toast.success(
         updatedDeliveryOrder.status === DeliveryOrderStatus.pending
           ? t("order_marked_as_approved_successfully")
@@ -162,7 +165,6 @@ export default function MedicationReturnShow({
           location: locationId,
           limit: 100,
           order: orderId,
-          exclude_status: MEDICATION_DISPENSE_CANCELLED_STATUSES.join(","),
         },
       }),
       enabled: !!orderId && !!locationId,
@@ -361,6 +363,18 @@ export default function MedicationReturnShow({
             )}
 
             {deliveryOrder.status === DeliveryOrderStatus.draft && (
+              <Button variant="outline" asChild>
+                <Link
+                  basePath="/"
+                  href={`${basePath}/order/${deliveryOrderId}/edit`}
+                >
+                  <Edit /> {t("edit")}
+                  <ShortcutBadge actionId="edit-order" />
+                </Link>
+              </Button>
+            )}
+
+            {deliveryOrder.status === DeliveryOrderStatus.draft && (
               <Button
                 onClick={() =>
                   handleUpdateDeliveryOrderStatus(DeliveryOrderStatus.pending)
@@ -383,9 +397,7 @@ export default function MedicationReturnShow({
               </Button>
             )}
 
-            {(deliveryOrder.status === DeliveryOrderStatus.completed ||
-              deliveryOrder.status === DeliveryOrderStatus.pending ||
-              deliveryOrder.status === DeliveryOrderStatus.draft) && (
+            {deliveryOrder.status === DeliveryOrderStatus.draft && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="icon">
@@ -396,12 +408,33 @@ export default function MedicationReturnShow({
                   <DropdownMenuItem asChild>
                     <Button
                       variant="ghost"
-                      onClick={() => setEnteredInErrorDialogOpen(true)}
+                      onClick={() =>
+                        setDeliveryOrderStatusDialog({
+                          open: true,
+                          status: DeliveryOrderStatus.entered_in_error,
+                        })
+                      }
                       disabled={isUpdating}
                       className="w-full flex justify-stretch"
                     >
                       <CareIcon icon="l-exclamation-circle" />
                       <span>{t("mark_as_entered_in_error")}</span>
+                    </Button>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Button
+                      variant="ghost"
+                      onClick={() =>
+                        setDeliveryOrderStatusDialog({
+                          open: true,
+                          status: DeliveryOrderStatus.abandoned,
+                        })
+                      }
+                      disabled={isUpdating}
+                      className="w-full flex justify-stretch"
+                    >
+                      <CareIcon icon="l-ban" />
+                      <span>{t("mark_as_abandoned")}</span>
                     </Button>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -770,19 +803,29 @@ export default function MedicationReturnShow({
         </Dialog>
 
         <ConfirmActionDialog
-          open={enteredInErrorDialogOpen}
-          onOpenChange={setEnteredInErrorDialogOpen}
-          title={t("mark_as_entered_in_error")}
-          description={t(
-            "mark_order_as_entered_in_error_confirmation_description",
-          )}
+          open={deliveryOrderStatusDialog.open}
+          onOpenChange={(open) =>
+            setDeliveryOrderStatusDialog((prev) => ({ ...prev, open }))
+          }
+          title={
+            deliveryOrderStatusDialog.status ===
+            DeliveryOrderStatus.entered_in_error
+              ? t("mark_as_entered_in_error")
+              : t("mark_as_abandoned")
+          }
+          description={
+            deliveryOrderStatusDialog.status ===
+            DeliveryOrderStatus.entered_in_error
+              ? t("mark_order_as_entered_in_error_confirmation_description")
+              : t("mark_order_as_abandoned_confirmation_description")
+          }
           confirmText={t("confirm")}
           variant="destructive"
           onConfirm={() => {
-            handleUpdateDeliveryOrderStatus(
-              DeliveryOrderStatus.entered_in_error,
-            );
-            setEnteredInErrorDialogOpen(false);
+            if (deliveryOrderStatusDialog.status) {
+              handleUpdateDeliveryOrderStatus(deliveryOrderStatusDialog.status);
+            }
+            setDeliveryOrderStatusDialog({ open: false, status: null });
           }}
           disabled={isUpdating}
         />

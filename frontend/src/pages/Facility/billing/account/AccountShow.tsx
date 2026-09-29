@@ -43,7 +43,7 @@ import query from "@/Utils/request/query";
 import { getPermissions } from "@/common/Permissions";
 import { usePermissions } from "@/context/PermissionContext";
 import { useShortcutSubContext } from "@/context/ShortcutContext";
-import { PaymentReconciliationSheet } from "@/pages/Facility/billing/PaymentReconciliationSheet";
+import PaymentReconciliationSheet from "@/pages/Facility/billing/PaymentReconciliationSheet";
 import InvoicesData from "@/pages/Facility/billing/invoice/InvoicesData";
 import PaymentsData from "@/pages/Facility/billing/paymentReconciliation/PaymentsData";
 import {
@@ -83,17 +83,12 @@ function formatDate(date?: string) {
   });
 }
 
-export const ACCOUNT_TABS = [
-  "invoices",
-  "charge_items",
-  "payments",
-  "reports",
-  "bed_charge_items",
-] as const;
-export type AccountTab = (typeof ACCOUNT_TABS)[number];
-
-export const ACCOUNT_PAYMENT_TYPES = ["pay", "credit_note"] as const;
-export type AccountPaymentType = (typeof ACCOUNT_PAYMENT_TYPES)[number];
+type tab =
+  | "charge_items"
+  | "invoices"
+  | "payments"
+  | "bed_charge_items"
+  | "reports";
 
 const closedStatusText = {
   [AccountBillingStatus.closed_baddebt]: "close_account_help_closed_baddebt",
@@ -103,30 +98,21 @@ const closedStatusText = {
   [AccountBillingStatus.closed_combined]: "close_account_help_closed_combined",
 };
 
-function AccountShow({
+export function AccountShow({
   facilityId,
   accountId,
   tab,
-  paymentType,
 }: {
   facilityId: string;
   accountId: string;
-  tab: string;
-  paymentType?: string;
+  tab: tab;
 }) {
   const { t } = useTranslation();
   const [sheetOpen, setSheetOpen] = useState(false);
-  const openPaymentSheet = (type: AccountPaymentType) => {
-    navigate(
-      `/facility/${facilityId}/billing/account/${accountId}/${tab}/payment/${type}`,
-      { replace: true },
-    );
-  };
-  const closePaymentSheet = () => {
-    navigate(`/facility/${facilityId}/billing/account/${accountId}/${tab}`, {
-      replace: true,
-    });
-  };
+  const [paymentSheet, setPaymentSheet] = useState<{
+    isOpen: boolean;
+    isCreditNote: boolean;
+  }>({ isOpen: false, isCreditNote: false });
   const [transferPaymentOpen, setTransferPaymentOpen] = useState(false);
   const queryClient = useQueryClient();
   const [closeAccountStatus, setCloseAccountStatus] = useState<{
@@ -390,7 +376,15 @@ function AccountShow({
                 {t("create_invoice")}
                 <ShortcutBadge actionId="create-invoice" />
               </Button>
-              <Button variant="primary" onClick={() => openPaymentSheet("pay")}>
+              <Button
+                variant="primary"
+                onClick={() =>
+                  setPaymentSheet({
+                    isOpen: true,
+                    isCreditNote: false,
+                  })
+                }
+              >
                 <CareIcon icon="l-plus" className="size-4" />
                 {t("add_credit_payment")}
                 <ShortcutBadge actionId="credit-payment-account" />
@@ -412,7 +406,15 @@ function AccountShow({
                 {t("invoice")}
                 <ShortcutBadge actionId="create-invoice" />
               </Button>
-              <Button variant="primary" onClick={() => openPaymentSheet("pay")}>
+              <Button
+                variant="primary"
+                onClick={() =>
+                  setPaymentSheet({
+                    isOpen: true,
+                    isCreditNote: false,
+                  })
+                }
+              >
                 <CareIcon icon="l-plus" className="size-4" />
                 {t("credit")}
                 <ShortcutBadge actionId="record-payment-account" />
@@ -446,7 +448,12 @@ function AccountShow({
                       <ShortcutBadge actionId="settle-close-account" />
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => openPaymentSheet("credit_note")}
+                      onClick={() =>
+                        setPaymentSheet({
+                          isOpen: true,
+                          isCreditNote: true,
+                        })
+                      }
                     >
                       <CareIcon icon="l-plus" className="mr-2 size-4" />
                       {t("record_credit_note")}
@@ -724,11 +731,11 @@ function AccountShow({
       />
 
       <PaymentReconciliationSheet
-        open={paymentType !== undefined}
-        onOpenChange={(open) => !open && closePaymentSheet()}
+        open={paymentSheet.isOpen}
+        onOpenChange={(isOpen) => setPaymentSheet({ ...paymentSheet, isOpen })}
         facilityId={facilityId}
         accountId={accountId}
-        isCreditNote={paymentType === "credit_note"}
+        isCreditNote={paymentSheet.isCreditNote}
         account={account}
       />
 

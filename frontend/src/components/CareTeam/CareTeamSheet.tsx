@@ -40,7 +40,7 @@ type CareTeamSheetProps = {
   setOpen?: (open: boolean) => void;
 };
 
-export function CareTeamEmptyState() {
+export function EmptyState() {
   const { t } = useTranslation();
   return (
     <div className="flex min-h-[200px] flex-col items-center justify-center gap-1 p-8 text-center">
@@ -252,7 +252,7 @@ export function CareTeamSheet({
 
               <div className="space-y-2">
                 {encounter.care_team.length === 0 ? (
-                  <CareTeamEmptyState />
+                  <EmptyState />
                 ) : (
                   encounter.care_team.map((member, index) => (
                     <div
@@ -262,7 +262,7 @@ export function CareTeamSheet({
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                           <Avatar
-                            name={formatName(member.member, true)}
+                            name={formatName(member.member)}
                             imageUrl={member.member?.profile_picture_url}
                             className="size-8"
                           />

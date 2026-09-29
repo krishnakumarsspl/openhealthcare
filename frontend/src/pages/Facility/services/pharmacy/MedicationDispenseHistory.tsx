@@ -158,8 +158,7 @@ export default function MedicationDispenseHistory({
     },
   } as const;
 
-  const showCheckboxes =
-    !!qParams.patientId && qParams.exclude_status === "history";
+  const showCheckboxes = !!qParams.patientId;
 
   const completedDispenses =
     dispenseOrderQueue?.results?.filter(

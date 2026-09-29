@@ -20,14 +20,3 @@ export interface LoginByOtpRequest {
 export interface LoginByOtpResponse {
   access: string;
 }
-
-export interface ConfirmPasswordResetOtpRequest {
-  phone_number: string;
-  otp: string;
-  password: string;
-  username?: string;
-}
-
-export interface ConfirmPasswordResetOtpResponse {
-  message: string;
-}

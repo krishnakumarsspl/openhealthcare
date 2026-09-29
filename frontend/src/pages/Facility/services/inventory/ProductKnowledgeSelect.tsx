@@ -54,7 +54,9 @@ export function ProductKnowledgeSelect({
       value={value}
       onValueChange={(
         selectedValue:
-          ProductKnowledgeBase | ProductKnowledgeBase[] | undefined,
+          | ProductKnowledgeBase
+          | ProductKnowledgeBase[]
+          | undefined,
       ) => {
         if (!selectedValue) {
           onChange(undefined);

@@ -22,13 +22,13 @@ export const INVOICE_STATUS_COLORS = {
 
 export interface InvoiceBase {
   id: string;
-  title?: string;
   number: string;
   status: InvoiceStatus;
   cancelled_reason?: (typeof INVOICE_CANCEL_REASONS)[number];
   payment_terms?: string;
   note?: string;
   issue_date?: string;
+  locked: boolean;
 }
 
 export interface InvoiceCreate extends Omit<
@@ -40,13 +40,12 @@ export interface InvoiceCreate extends Omit<
 }
 
 export interface InvoiceList extends InvoiceBase {
+  account: AccountRead;
   total_net: string;
   total_gross: string;
-  locked: boolean;
+  title: string;
   created_date: string;
   modified_date: string;
-  account: AccountRead;
-  is_refund: boolean;
 }
 
 export interface InvoiceRead extends InvoiceList {
@@ -59,6 +58,7 @@ export interface InvoiceRead extends InvoiceList {
   total_payments: string;
   credit_notes: PaymentReconciliationRead[];
   total_credit_notes: string;
+  is_refund: boolean;
 }
 
 export interface InvoiceCancel {

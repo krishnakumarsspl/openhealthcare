@@ -20,9 +20,8 @@ interface LocationActionButtonsProps {
   status: LocationAssociationStatus;
   location: LocationAssociationRead;
   onMove: () => void;
-  onAddBed?: () => void;
   onComplete?: (location: LocationAssociationRead) => void;
-  onCancelBed: () => void;
+  onCancel: () => void;
   onAssignNow?: () => void;
   onUpdateTime?: (location: LocationAssociationRead) => void;
 }
@@ -31,9 +30,8 @@ export function LocationActionButtons({
   status,
   location,
   onMove,
-  onAddBed,
   onComplete,
-  onCancelBed,
+  onCancel,
   onAssignNow,
   onUpdateTime,
 }: LocationActionButtonsProps) {
@@ -48,7 +46,7 @@ export function LocationActionButtons({
 
   const buttons: ActionButton[] = [];
 
-  if (status === "active") {
+  if (status !== "reserved") {
     buttons.push({
       label: t("move_to_another_bed"),
       onClick: onMove,
@@ -57,26 +55,13 @@ export function LocationActionButtons({
     });
   }
 
-  if (status === "planned" || status === "reserved" || status === "active") {
-    if (onAddBed) {
-      buttons.push({
-        label: t("add_another_bed"),
-        onClick: onAddBed,
-        variant: "outline",
-        className: "border-gray-400 shadow-sm",
-      });
-    }
-  }
-
-  if (status === "planned" || status === "reserved") {
-    if (onAssignNow) {
-      buttons.push({
-        label: t("assign_bed_now"),
-        onClick: onAssignNow,
-        variant: "primary",
-        className: "shadow-sm",
-      });
-    }
+  if (status === "planned" && onAssignNow) {
+    buttons.push({
+      label: t("assign_bed_now"),
+      onClick: onAssignNow,
+      variant: "primary",
+      className: "shadow-sm",
+    });
   }
 
   return (
@@ -104,7 +89,7 @@ export function LocationActionButtons({
                 {t("complete_bed_stay")}
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem onClick={() => onCancelBed()}>
+            <DropdownMenuItem onClick={() => onCancel()}>
               {status === "planned" ? t("cancel_plan") : t("mark_as_error")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onUpdateTime(location)}>

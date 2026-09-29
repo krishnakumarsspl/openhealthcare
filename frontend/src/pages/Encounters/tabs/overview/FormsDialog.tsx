@@ -8,6 +8,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import useQuestionnaireOptions from "@/hooks/useQuestionnaireOptions";
 import { cn } from "@/lib/utils";
 import { useEncounter } from "@/pages/Encounters/utils/EncounterProvider";
 import questionnaireApi from "@/types/questionnaire/questionnaireApi";
@@ -24,9 +25,11 @@ import careConfig from "@careConfig";
 
 export const FormDialog = ({
   subjectType,
+  questionnaireTag,
   trigger,
 }: {
   subjectType: string;
+  questionnaireTag: string;
   trigger?: React.ReactNode;
 }) => {
   const { t } = useTranslation();
@@ -113,13 +116,30 @@ export const FormDialog = ({
     }
   };
 
-  const allQuestionnaires = questionnaires?.results ?? [];
+  const taggedQuestionnaires = useQuestionnaireOptions(questionnaireTag);
+  const allQuestionnaires = [
+    ...taggedQuestionnaires.results,
+    ...(questionnaires?.results ?? []),
+  ];
 
   const questionnaireIds = new Set([...allQuestionnaires.map((q) => q.id)]);
 
-  const questionnaireList = [...questionnaireIds].map((id) =>
-    allQuestionnaires.find((q) => q.id === id)!,
+  const questionnaireList = [...questionnaireIds].map(
+    (id) => allQuestionnaires.find((q) => q.id === id)!,
   );
+
+  // Handle keyboard shortcut to open forms dialog
+  useEffect(() => {
+    const handleOpenFormsDialog = () => {
+      setOpen(true);
+    };
+
+    document.addEventListener("open-forms-dialog", handleOpenFormsDialog);
+
+    return () => {
+      document.removeEventListener("open-forms-dialog", handleOpenFormsDialog);
+    };
+  }, []);
 
   useEffect(() => {
     if (open) {

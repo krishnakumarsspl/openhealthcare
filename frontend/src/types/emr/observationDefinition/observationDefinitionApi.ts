@@ -2,36 +2,33 @@ import { HttpMethod, PaginatedResponse, Type } from "@/Utils/request/types";
 
 import { Metrics } from "@/types/base/condition/condition";
 import {
-  ObservationDefinitionCreate,
-  ObservationDefinitionRead,
-  ObservationDefinitionUpdate,
+  ObservationDefinitionCreateSpec,
+  ObservationDefinitionReadSpec,
 } from "./observationDefinition";
 
 export default {
-  list: {
+  listObservationDefinition: {
     path: "/api/v1/observation_definition/",
     method: HttpMethod.GET,
-    TRes: Type<PaginatedResponse<ObservationDefinitionRead>>(),
+    TRes: Type<PaginatedResponse<ObservationDefinitionReadSpec>>(),
     defaultQueryParams: {
       ordering: "-created_date",
     },
   },
-  get: {
+  retrieveObservationDefinition: {
     path: "/api/v1/observation_definition/{observationSlug}/",
     method: HttpMethod.GET,
-    TRes: Type<ObservationDefinitionRead>(),
+    TRes: Type<ObservationDefinitionReadSpec>(),
   },
-  create: {
+  createObservationDefinition: {
     path: "/api/v1/observation_definition/",
     method: HttpMethod.POST,
-    TBody: Type<ObservationDefinitionCreate>(),
-    TRes: Type<ObservationDefinitionRead>(),
+    TRes: Type<ObservationDefinitionCreateSpec>(),
   },
-  update: {
+  updateObservationDefinition: {
     path: "/api/v1/observation_definition/{observationSlug}/",
     method: HttpMethod.PUT,
-    TBody: Type<ObservationDefinitionUpdate>(),
-    TRes: Type<ObservationDefinitionRead>(),
+    TRes: Type<ObservationDefinitionReadSpec>(),
   },
   getAllMetrics: {
     path: "/api/v1/observation_definition/metrics/",

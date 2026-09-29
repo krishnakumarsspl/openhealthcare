@@ -16,10 +16,6 @@ import mutate from "@/Utils/request/mutate";
 import { MedicationAdministrationRequest } from "@/types/emr/medicationAdministration/medicationAdministration";
 import medicationAdministrationApi from "@/types/emr/medicationAdministration/medicationAdministrationApi";
 import { MedicationRequestRead } from "@/types/emr/medicationRequest/medicationRequest";
-import {
-  type AdministrableProductType,
-  ProductKnowledgeType,
-} from "@/types/inventory/productKnowledge/productKnowledge";
 
 import { MedicineAdminForm } from "./MedicineAdminForm";
 
@@ -32,7 +28,6 @@ interface Props {
   administrationRequest: MedicationAdministrationRequest;
   patientId: string;
   otherGroupRequests?: MedicationRequestRead[];
-  productType: AdministrableProductType;
   onMedicationChange?: (medication: MedicationRequestRead) => void;
 }
 
@@ -45,7 +40,6 @@ export const MedicineAdminDialog = ({
   administrationRequest: initialRequest,
   patientId,
   otherGroupRequests,
-  productType,
   onMedicationChange,
 }: Props) => {
   const { t } = useTranslation();
@@ -65,23 +59,9 @@ export const MedicineAdminDialog = ({
     }),
     onSuccess: () => {
       onOpenChange(false);
-      toast.success(
-        t(
-          productType === ProductKnowledgeType.medication
-            ? "medication_administration_saved"
-            : "nutritional_product_administration_saved",
-        ),
-      );
+      toast.success(t("medication_administration_saved"));
     },
   });
-
-  const getButtonText = () => {
-    if (isPending) return t("saving");
-    if (administrationRequest.id) return t("update");
-    return productType === ProductKnowledgeType.medication
-      ? t("administer_medicine")
-      : t("record_intake");
-  };
 
   const handleSubmit = () => {
     upsertAdministration({
@@ -97,11 +77,7 @@ export const MedicineAdminDialog = ({
             <DialogTitle className="text-xl">
               {administrationRequest.id
                 ? t("edit_administration")
-                : t(
-                    productType === ProductKnowledgeType.medication
-                      ? "administer_medicine"
-                      : "record_intake",
-                  )}
+                : t("administer_medicine")}
             </DialogTitle>
           </div>
         </DialogHeader>
@@ -117,7 +93,6 @@ export const MedicineAdminDialog = ({
             onMedicationChange={onMedicationChange}
             isValid={setIsFormValid}
             otherGroupRequests={otherGroupRequests}
-            productType={productType}
           />
         </div>
 
@@ -126,7 +101,11 @@ export const MedicineAdminDialog = ({
             {t("cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={isPending || !isFormValid}>
-            {getButtonText()}
+            {isPending
+              ? t("saving")
+              : administrationRequest.id
+                ? t("update")
+                : t("administer_medicine")}
           </Button>
         </DialogFooter>
       </DialogContent>

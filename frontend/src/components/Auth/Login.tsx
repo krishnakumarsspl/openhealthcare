@@ -10,6 +10,8 @@ import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 
+import CareIcon from "@/CAREUI/icons/CareIcon";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -29,7 +31,6 @@ import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { ForgotPasswordPanel } from "@/components/Auth/ForgotPasswordPanel";
 import CircularProgress from "@/components/Common/CircularProgress";
 import LanguageSelectorLogin from "@/components/Common/LanguageSelectorLogin";
 
@@ -238,7 +239,7 @@ const Login = (props: LoginProps) => {
     return form;
   };
 
-  const handleSubmit = async (e: React.SubmitEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     ViewCache.invalidateAll();
     const validated = validateData();
@@ -278,7 +279,7 @@ const Login = (props: LoginProps) => {
     }
     return form;
   };
-  const handleForgetSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+  const handleForgetSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const valid = validateForgetData();
     if (!valid) return;
@@ -295,7 +296,7 @@ const Login = (props: LoginProps) => {
   };
 
   // Handle OTP flow
-  const handlePatientLogin = async (e: React.SubmitEvent) => {
+  const handlePatientLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isOtpSent) {
@@ -446,14 +447,64 @@ const Login = (props: LoginProps) => {
                         </Button>
                       </form>
                     ) : (
-                      <ForgotPasswordPanel
-                        username={form.username}
-                        usernameError={errors.username}
-                        onUsernameChange={handleChange}
-                        onSubmitEmail={handleForgetSubmit}
-                        onBackToLogin={() => setForgotPassword(false)}
-                        isSubmitting={isLoading || forgotPasswordPending}
-                      />
+                      <form onSubmit={handleForgetSubmit} className="space-y-4">
+                        <Button
+                          variant="link"
+                          type="button"
+                          onClick={() => setForgotPassword(false)}
+                          className="px-0 mb-4 flex items-center gap-2"
+                        >
+                          <CareIcon icon="l-arrow-left" className="text-lg" />
+                          <span>{t("back_to_login")}</span>
+                        </Button>
+
+                        <div className="space-y-4">
+                          <div>
+                            <h2 className="text-2xl font-bold text-gray-900">
+                              {t("forget_password")}
+                            </h2>
+                            <p className="text-sm text-gray-500 mt-2">
+                              {t("forget_password_instruction")}
+                            </p>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="forgot_username">
+                              {t("username")}
+                            </Label>
+                            <Input
+                              id="forgot_username"
+                              name="username"
+                              type="text"
+                              value={form.username}
+                              onChange={handleChange}
+                              placeholder={t("enter_your_username")}
+                              className={cn(
+                                errors.username &&
+                                  "border-red-500 focus-visible:ring-red-500",
+                              )}
+                            />
+                            {errors.username && (
+                              <p className="text-sm text-red-500">
+                                {t(errors.username)}
+                              </p>
+                            )}
+                          </div>
+
+                          <Button
+                            type="submit"
+                            className="w-full"
+                            variant="primary"
+                            disabled={isLoading || forgotPasswordPending}
+                          >
+                            {isLoading || forgotPasswordPending ? (
+                              <CircularProgress className="text-white" />
+                            ) : (
+                              t("send_reset_link")
+                            )}
+                          </Button>
+                        </div>
+                      </form>
                     )}
                   </>
                 ) : (
@@ -555,14 +606,67 @@ const Login = (props: LoginProps) => {
                           </Button>
                         </form>
                       ) : (
-                        <ForgotPasswordPanel
-                          username={form.username}
-                          usernameError={errors.username}
-                          onUsernameChange={handleChange}
-                          onSubmitEmail={handleForgetSubmit}
-                          onBackToLogin={() => setForgotPassword(false)}
-                          isSubmitting={isLoading || forgotPasswordPending}
-                        />
+                        <form
+                          onSubmit={handleForgetSubmit}
+                          className="space-y-4"
+                        >
+                          <Button
+                            variant="link"
+                            type="button"
+                            onClick={() => setForgotPassword(false)}
+                            className="px-0 mb-4 flex items-center gap-2"
+                          >
+                            <CareIcon icon="l-arrow-left" className="text-lg" />
+                            <span>{t("back_to_login")}</span>
+                          </Button>
+
+                          <div className="space-y-4">
+                            <div>
+                              <h2 className="text-2xl font-bold text-gray-900">
+                                {t("forget_password")}
+                              </h2>
+                              <p className="text-sm text-gray-500 mt-2">
+                                {t("forget_password_instruction")}
+                              </p>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="forgot_username">
+                                {t("username")}
+                              </Label>
+                              <Input
+                                id="forgot_username"
+                                name="username"
+                                type="text"
+                                value={form.username}
+                                onChange={handleChange}
+                                placeholder={t("enter_your_username")}
+                                className={cn(
+                                  errors.username &&
+                                    "border-red-500 focus-visible:ring-red-500",
+                                )}
+                              />
+                              {errors.username && (
+                                <p className="text-sm text-red-500">
+                                  {t(errors.username)}
+                                </p>
+                              )}
+                            </div>
+
+                            <Button
+                              type="submit"
+                              className="w-full"
+                              variant="primary"
+                              disabled={isLoading || forgotPasswordPending}
+                            >
+                              {isLoading || forgotPasswordPending ? (
+                                <CircularProgress className="text-white" />
+                              ) : (
+                                t("send_reset_link")
+                              )}
+                            </Button>
+                          </div>
+                        </form>
                       )}
                     </TabsContent>
 

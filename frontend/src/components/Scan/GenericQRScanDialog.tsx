@@ -27,7 +27,7 @@ interface GenericQRScanDialogProps {
   autoStartScanning?: boolean;
 }
 
-function GenericQRScanDialog({
+export function GenericQRScanDialog({
   open,
   onOpenChange,
   onScanSuccess,

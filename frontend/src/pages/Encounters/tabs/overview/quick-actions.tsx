@@ -1,4 +1,3 @@
-import { HeartPulse, Stethoscope } from "lucide-react";
 import { Link } from "raviger";
 import React from "react";
 import { useTranslation } from "react-i18next";
@@ -12,12 +11,17 @@ import {
   TestTubeIcon,
 } from "@/CAREUI/icons/CustomIcons";
 
-import { ShortcutBadge } from "@/Utils/keyboardShortcutComponents";
+import {
+  KeyboardShortcutBadge,
+  ShortcutBadge,
+} from "@/Utils/keyboardShortcutComponents";
 
+import { useEncounterShortcutDisplays } from "@/hooks/useEncounterShortcuts";
 import { FormDialog } from "./FormsDialog";
 
 export const QuickActions = (props: React.ComponentProps<"div">) => {
   const { t } = useTranslation();
+  const getShortcutDisplay = useEncounterShortcutDisplays();
 
   return (
     <div
@@ -27,13 +31,13 @@ export const QuickActions = (props: React.ComponentProps<"div">) => {
       <QuickAction
         icon={<AllergyIcon className="text-red-700" />}
         title={t("allergy")}
-        actionId="add-allergy"
+        shortcut={getShortcutDisplay("add-allergy")}
         href={`questionnaire/allergy_intolerance`}
       />
       <QuickAction
         icon={<TestTubeIcon className="text-pink-700 size-8" />}
         title={t("service_request")}
-        actionId="add-service-request"
+        shortcut={getShortcutDisplay("add-service-request")}
         href={`questionnaire/service_request`}
       />
       <QuickAction
@@ -42,27 +46,14 @@ export const QuickActions = (props: React.ComponentProps<"div">) => {
         href={`questionnaire/medication_request`}
         actionId="add-medication-request"
       />
-      <QuickAction
-        icon={<HeartPulse className="text-orange-700 size-8" />}
-        title={t("add_symptom")}
-        href={`questionnaire/symptom`}
-        actionId="add-symptoms"
-        hidden
-      />
-      <QuickAction
-        icon={<Stethoscope className="text-purple-700 size-8" />}
-        title={t("add_diagnosis")}
-        href={`questionnaire/diagnosis`}
-        actionId="add-diagnosis"
-        hidden
-      />
       <FormDialog
         subjectType="encounter"
+        questionnaireTag="encounter_actions"
         trigger={
           <QuickAction
             icon={<HealthWorkerIcon className="text-teal-700" />}
             title={t("forms")}
-            actionId="add-questionnaire"
+            shortcut={getShortcutDisplay("add-questionnaire")}
           />
         }
       />
@@ -73,37 +64,46 @@ export const QuickActions = (props: React.ComponentProps<"div">) => {
 export function QuickAction({
   icon,
   title,
-  actionId,
+  shortcut,
   href,
+  actionId,
   basePath,
   onClick,
-  hidden,
   ...props
 }: {
   icon: React.ReactNode;
   title: string;
-  actionId?: string;
+  shortcut?: string;
   href?: string;
+  props?: React.ComponentProps<"div">;
   basePath?: string;
   onClick?: () => void;
-  hidden?: boolean;
-} & React.ComponentProps<"button">) {
-  const className = cn(
-    "flex-1 flex flex-row md:flex-col gap-1.25 p-1 pb-2 rounded-lg shadow bg-white",
-    hidden && "hidden",
-  );
+  actionId?: string;
+}) {
+  const className =
+    "flex-1 flex flex-row md:flex-col gap-1.25 p-1 pb-2 rounded-lg shadow bg-white";
 
   if (href) {
     return (
       <Link basePath={basePath} href={href} className={className}>
-        <QuickActionContent icon={icon} title={title} actionId={actionId} />
+        <QuickActionContent
+          icon={icon}
+          title={title}
+          shortcut={shortcut}
+          actionId={actionId}
+        />
       </Link>
     );
   }
 
   return (
     <button className={className} {...props} onClick={onClick}>
-      <QuickActionContent icon={icon} title={title} actionId={actionId} />
+      <QuickActionContent
+        icon={icon}
+        title={title}
+        shortcut={shortcut}
+        actionId={actionId}
+      />
     </button>
   );
 }
@@ -111,15 +111,18 @@ export function QuickAction({
 const QuickActionContent = ({
   icon,
   title,
+  shortcut,
   actionId,
 }: {
   icon: React.ReactNode;
   title: string;
+  shortcut?: string;
   actionId?: string;
 }) => {
   return (
     <>
       <div className="relative flex md:py-3 py-0 rounded-t-md rounded-b-lg md:bg-gray-100 bg-white">
+        <KeyboardShortcutBadge shortcut={shortcut} position="top-right" />
         {actionId && <ShortcutBadge actionId={actionId} position="top-right" />}
         <div className="rounded-xl bg-white md:shadow shadow-none mx-auto items-center flex p-2">
           {icon}

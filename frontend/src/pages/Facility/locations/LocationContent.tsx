@@ -26,8 +26,6 @@ import PaginationComponent from "@/components/Common/Pagination";
 import { CardGridSkeleton } from "@/components/Common/SkeletonLoading";
 import EncounterInfoCard from "@/components/Encounter/EncounterInfoCard";
 
-import { TagBadges } from "@/components/Tags/TagBadges";
-
 import query from "@/Utils/request/query";
 import { LocationRead, LocationTypeIcons } from "@/types/location/location";
 import locationApi from "@/types/location/locationApi";
@@ -56,7 +54,7 @@ function OccupiedBedSheet({ location, facilityId }: OccupiedBedSheetProps) {
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <div className="flex flex-col items-center justify-center py-8 h-auto px-2">
+      <div className="flex flex-col items-center justify-center py-8 h-auto">
         <div className="rounded-full bg-yellow-100 p-3 mb-3">
           <Lock className="size-6 text-yellow-700" />
         </div>
@@ -124,34 +122,31 @@ function BedCard({ location, facilityId }: BedCardProps) {
     >
       <div
         className={cn(
-          "px-4 py-3",
+          "px-4 py-3 flex justify-between items-center",
           isOccupied
             ? "bg-blue-50 border-b border-blue-100"
             : "bg-green-100 border-b border-green-200",
         )}
       >
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2 min-w-0">
-            <Bed
-              className={cn(
-                "size-4 shrink-0",
-                isOccupied ? "text-blue-600" : "text-green-600",
-              )}
-            />
-            <span className="font-medium">{location.name}</span>
-          </div>
-          <div
+        <div className="flex items-center">
+          <Bed
             className={cn(
-              "text-xs px-2 py-1 rounded-full shrink-0",
-              isOccupied
-                ? "bg-blue-100 text-blue-800"
-                : "bg-green-200 text-green-800",
+              "size-4 mr-2",
+              isOccupied ? "text-blue-600" : "text-green-600",
             )}
-          >
-            {isOccupied ? t("occupied") : t("available")}
-          </div>
+          />
+          <span className="font-medium">{location.name}</span>
         </div>
-        <TagBadges className="pt-1" tags={location.tags} size="xs" />
+        <div
+          className={cn(
+            "text-xs px-2 py-1 rounded-full",
+            isOccupied
+              ? "bg-blue-100 text-blue-800"
+              : "bg-green-200 text-green-800",
+          )}
+        >
+          {isOccupied ? t("occupied") : t("available")}
+        </div>
       </div>
 
       <div className="h-full">
@@ -203,11 +198,12 @@ function LocationCard({ location, onClick }: LocationCardProps) {
           {location.description}
         </p>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-          <span className="capitalize text-gray-600">
-            {t(`location_form__${location.form}`)}
-          </span>
-          <TagBadges tags={location.tags} size="xs" />
+        <div className="flex justify-between text-sm">
+          <div className="flex items-center">
+            <span className="capitalize text-gray-600">
+              {t(`location_form__${location.form}`)}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -331,14 +327,9 @@ export default function LocationContent({
         )}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-lg font-semibold whitespace-nowrap">
-                {selectedLocation ? selectedLocation.name : t("locations")}
-              </h2>
-              {selectedLocation && (
-                <TagBadges tags={selectedLocation.tags} size="xs" />
-              )}
-            </div>
+            <h2 className="text-lg font-semibold whitespace-nowrap">
+              {selectedLocation ? selectedLocation.name : t("locations")}
+            </h2>
           </div>
           <div className="w-full sm:w-72 shrink-0">
             <Input

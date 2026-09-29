@@ -6,7 +6,6 @@ import useKeyboardShortcut from "use-keyboard-shortcut";
 
 import { cn } from "@/lib/utils";
 
-import TagColorDot from "@/components/Tags/TagColorDot";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -106,9 +105,11 @@ function TreeViewItem({
           ) : (
             <Checkbox checked={isSelected} className="h-4 w-4" />
           )}
-          <TagColorDot
-            tag={tag}
-            fallbackColorClass={getColorForTag(tag.id, 0)}
+          <div
+            className={cn(
+              "h-3 w-3 rounded-full shrink-0 border",
+              getColorForTag(tag.id, 0),
+            )}
           />
           <span className="text-sm truncate flex-1">{tag.display}</span>
           {tag.has_children && (
@@ -281,9 +282,11 @@ function TagFilterDropdown({
                             <ChevronRight className="h-3 w-3 shrink-0" />
                           </span>
                         )}
-                        <TagColorDot
-                          tag={tag}
-                          fallbackColorClass={getColorForTag(tag.id, index)}
+                        <div
+                          className={cn(
+                            "h-3 w-3 rounded-full shrink-0 border",
+                            getColorForTag(tag.id, index),
+                          )}
                         />
                         <span className="truncate">{tag.display}</span>
                       </span>
@@ -351,9 +354,11 @@ function TagFilterDropdown({
               >
                 <Checkbox checked={false} className="h-4 w-4" />
                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <TagColorDot
-                    tag={tag}
-                    fallbackColorClass={getColorForTag(tag.id, index)}
+                  <div
+                    className={cn(
+                      "h-3 w-3 rounded-full shrink-0 border",
+                      getColorForTag(tag.id, index),
+                    )}
                   />
                   <span className="text-sm flex flex-row items-center gap-1 min-w-0 truncate">
                     {tag.parent && (
@@ -486,9 +491,11 @@ function GroupSubmenu({
               >
                 <Checkbox checked={isSelected} className="h-4 w-4" />
                 <div className="flex items-center gap-2 flex-1">
-                  <TagColorDot
-                    tag={childTag}
-                    fallbackColorClass={getColorForTag(childTag.id, index)}
+                  <div
+                    className={cn(
+                      "h-3 w-3 rounded-full shrink-0 border",
+                      getColorForTag(childTag.id, index),
+                    )}
                   />
                   <span className="text-sm">{childTag.display}</span>
                 </div>
@@ -543,22 +550,22 @@ export const SelectedTagBadge = ({ selected }: { selected: TagConfig[] }) => {
   return (
     <div className="flex items-center gap-2 min-w-0 shrink-0">
       {selected.length === 1 ? (
-        <TagColorDot
-          tag={selected[0]}
-          fallbackColorClass={firstColor}
-          className="w-2 h-2"
-        />
+        <span
+          className={cn(firstColor, "rounded-full w-2 h-2 border shrink-0")}
+        ></span>
       ) : (
         <div className="relative w-4 h-2 shrink-0">
-          <TagColorDot
-            tag={selected[0]}
-            fallbackColorClass={firstColor}
-            className="w-2 h-2 absolute left-0 opacity-75"
+          <span
+            className={cn(
+              firstColor,
+              "rounded-full w-2 h-2 absolute left-0 opacity-75 border",
+            )}
           />
-          <TagColorDot
-            tag={selected[1]}
-            fallbackColorClass={secondColor}
-            className="w-2 h-2 absolute left-1 opacity-75"
+          <span
+            className={cn(
+              secondColor,
+              "rounded-full w-2 h-2 absolute left-1 opacity-75 border",
+            )}
           />
         </div>
       )}

@@ -51,14 +51,13 @@ import { PatientRead } from "@/types/emr/patient/patient";
 import mutate from "@/Utils/request/mutate";
 import query from "@/Utils/request/query";
 import { PaginatedResponse } from "@/Utils/request/types";
-import { ExtensionContexts } from "@/Utils/schema/types";
 
 const createBaseSchema = (t: (key: string) => string) =>
   z.object({
     name: z.string().min(1, t("name_is_required")),
     description: z.string().optional().nullable(),
-    status: z.enum(AccountStatus),
-    billing_status: z.enum(AccountBillingStatus),
+    status: z.nativeEnum(AccountStatus),
+    billing_status: z.nativeEnum(AccountBillingStatus),
     id: z.string().optional(),
     patient: z.custom<PatientRead>().optional(),
     service_period: z.custom<Period>().optional(),
@@ -74,7 +73,7 @@ interface AccountSheetProps {
   isEdit?: boolean;
 }
 
-function AccountSheet({
+export function AccountSheet({
   open,
   onOpenChange,
   facilityId,
@@ -107,7 +106,6 @@ function AccountSheet({
     () =>
       getCombinedExtensionProps(
         getExtensions(ExtensionEntityType.account, "write"),
-        ExtensionContexts.account_form,
       ),
     [getExtensions],
   );
@@ -142,7 +140,6 @@ function AccountSheet({
   const extensions = useEntityExtensions({
     entityType: ExtensionEntityType.account,
     schemaType: "write",
-    context: ExtensionContexts.account_form,
     form: methods,
     existingData: initialValues?.extensions,
   });

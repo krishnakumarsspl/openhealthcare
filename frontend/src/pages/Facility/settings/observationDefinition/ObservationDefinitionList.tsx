@@ -30,13 +30,11 @@ import { ActionButtons } from "@/pages/Facility/settings/ActionButtons";
 import useFilters from "@/hooks/useFilters";
 
 import query from "@/Utils/request/query";
-import { valuesOf } from "@/Utils/utils";
-
 import {
+  OBSERVATION_DEFINITION_CATEGORY,
   OBSERVATION_DEFINITION_STATUS_COLORS,
-  ObservationDefinitionCategory,
+  type ObservationDefinitionReadSpec,
   ObservationDefinitionStatus,
-  type ObservationDefinitionRead,
 } from "@/types/emr/observationDefinition/observationDefinition";
 import observationDefinitionApi from "@/types/emr/observationDefinition/observationDefinitionApi";
 
@@ -44,7 +42,7 @@ function ObservationDefinitionCard({
   definition,
   facilityId,
 }: {
-  definition: ObservationDefinitionRead;
+  definition: ObservationDefinitionReadSpec;
   facilityId: string;
 }) {
   const { t } = useTranslation();
@@ -94,22 +92,25 @@ export default function ObservationDefinitionList({
     limit: 15,
     disableCache: true,
     defaultQueryParams: {
-      status: ObservationDefinitionStatus.ACTIVE,
+      status: "active",
     },
   });
 
   const { data: response, isLoading } = useQuery({
     queryKey: ["observationDefinitions", qParams],
-    queryFn: query.debounced(observationDefinitionApi.list, {
-      queryParams: {
-        facility: facilityId,
-        limit: resultsPerPage,
-        offset: ((qParams.page || 1) - 1) * resultsPerPage,
-        title: qParams.search,
-        status: qParams.status,
-        category: qParams.category,
+    queryFn: query.debounced(
+      observationDefinitionApi.listObservationDefinition,
+      {
+        queryParams: {
+          facility: facilityId,
+          limit: resultsPerPage,
+          offset: ((qParams.page || 1) - 1) * resultsPerPage,
+          title: qParams.search,
+          status: qParams.status,
+          category: qParams.category,
+        },
       },
-    }),
+    ),
   });
 
   const observationDefinitions = response?.results || [];
@@ -160,7 +161,7 @@ export default function ObservationDefinitionList({
                 <FilterSelect
                   value={qParams.status || ""}
                   onValueChange={(value) => updateQuery({ status: value })}
-                  options={valuesOf(ObservationDefinitionStatus)}
+                  options={Object.values(ObservationDefinitionStatus)}
                   label={t("status")}
                   onClear={() => updateQuery({ status: undefined })}
                 />
@@ -169,7 +170,7 @@ export default function ObservationDefinitionList({
                 <FilterSelect
                   value={qParams.category || ""}
                   onValueChange={(value) => updateQuery({ category: value })}
-                  options={valuesOf(ObservationDefinitionCategory)}
+                  options={OBSERVATION_DEFINITION_CATEGORY}
                   label={t("category")}
                   onClear={() => updateQuery({ category: undefined })}
                 />
@@ -200,7 +201,7 @@ export default function ObservationDefinitionList({
             {/* Mobile Card View */}
             <div className="grid gap-4 md:hidden">
               {observationDefinitions.map(
-                (definition: ObservationDefinitionRead) => (
+                (definition: ObservationDefinitionReadSpec) => (
                   <ObservationDefinitionCard
                     key={definition.slug}
                     definition={definition}
@@ -224,7 +225,7 @@ export default function ObservationDefinitionList({
                   </TableHeader>
                   <TableBody className="bg-white">
                     {observationDefinitions.map(
-                      (definition: ObservationDefinitionRead) => (
+                      (definition: ObservationDefinitionReadSpec) => (
                         <TableRow key={definition.slug} className="divide-x">
                           <TableCell className="font-medium">
                             {definition.title}
@@ -274,7 +275,7 @@ function ObservationDefinitionActions({
   definition,
   facilityId,
 }: {
-  definition: ObservationDefinitionRead;
+  definition: ObservationDefinitionReadSpec;
   facilityId: string;
 }) {
   return (

@@ -67,23 +67,22 @@ export default function CreateScheduleExceptionSheet({
     .object({
       reason: z.string().min(1, t("field_required")),
       valid_from: z
-        .date({ error: t("field_required") })
+        .date({ required_error: t("field_required") })
         .min(dayjs().startOf("day").toDate(), {
           message: t("schedule_exception_creation_for_past_validation_error"),
         }),
       valid_to: z
-        .date({ error: t("field_required") })
+        .date({ required_error: t("field_required") })
         .min(dayjs().startOf("day").toDate(), {
           message: t("schedule_exception_creation_for_past_validation_error"),
         }),
       start_time: z
         .string()
-        .min(1, t("field_required")) as unknown as z.ZodType<Time, Time>,
+        .min(1, t("field_required")) as unknown as z.ZodType<Time>,
 
-      end_time: z.string().min(1, t("field_required")) as unknown as z.ZodType<
-        Time,
-        Time
-      >,
+      end_time: z
+        .string()
+        .min(1, t("field_required")) as unknown as z.ZodType<Time>,
 
       unavailable_all_day: z.boolean(),
     })

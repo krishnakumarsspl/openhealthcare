@@ -30,7 +30,6 @@ import { Label } from "@/components/ui/label";
 
 import { usePatientContext } from "@/hooks/usePatientUser";
 
-import { PatientAge } from "@/components/Patient/PatientAge";
 import { formatAppointmentSlotTime } from "@/pages/Appointments/utils";
 import PublicAppointmentApi from "@/types/scheduling/PublicAppointmentApi";
 import {
@@ -39,6 +38,7 @@ import {
   PublicAppointment,
 } from "@/types/scheduling/schedule";
 import mutate from "@/Utils/request/mutate";
+import { formatPatientAge } from "@/Utils/utils";
 
 function AppointmentDialog({
   appointment,
@@ -105,7 +105,7 @@ function AppointmentDialog({
                   {appointment.patient.name}
                 </p>
                 <p className="text-sm text-gray-600 font-medium">
-                  <PatientAge patient={appointment.patient} />,{" "}
+                  {formatPatientAge(appointment.patient, true)},{" "}
                   {t(`GENDER__${appointment.patient.gender}`)}
                 </p>
               </div>

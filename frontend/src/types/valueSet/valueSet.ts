@@ -41,7 +41,6 @@ export interface ValueSetConcept {
 export interface ValueSetInclude {
   filter?: ValueSetFilter[];
   system: string;
-  version: string | null;
   concept?: ValueSetConcept[];
 }
 

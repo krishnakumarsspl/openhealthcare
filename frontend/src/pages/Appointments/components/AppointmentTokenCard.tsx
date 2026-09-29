@@ -5,26 +5,22 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 
 import { ShortcutBadge } from "@/Utils/keyboardShortcutComponents";
-import { PatientAge } from "@/components/Patient/PatientAge";
+import { formatPatientAge } from "@/Utils/utils";
 import { resourceTypeToResourcePathSlug } from "@/components/Schedule/useScheduleResource";
 import TagBadge from "@/components/Tags/TagBadge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useShortcutSubContext } from "@/context/ShortcutContext";
 import useBreakpoints from "@/hooks/useBreakpoints";
-import usePatientExtensionData from "@/hooks/usePatientExtensionData";
 import { formatSlotTimeRange } from "@/pages/Appointments/utils";
-import {
-  getPatientIdentifiers,
-  PatientRead,
-} from "@/types/emr/patient/patient";
+import { PatientRead } from "@/types/emr/patient/patient";
 import { FacilityRead } from "@/types/facility/facility";
 import { PatientIdentifierUse } from "@/types/patient/patientIdentifierConfig/patientIdentifierConfig";
 import {
   AppointmentRead,
   formatScheduleResourceName,
 } from "@/types/scheduling/schedule";
-import { renderTokenNumber, TokenRead } from "@/types/tokens/token/token";
+import { TokenRead, renderTokenNumber } from "@/types/tokens/token/token";
 import { formatDate } from "date-fns";
 import { PrinterIcon } from "lucide-react";
 import { Link } from "raviger";
@@ -55,16 +51,12 @@ const TokenCard = ({
   const patient = token?.patient ?? appointment?.patient;
   // Get patient with identifiers (appointment.patient has more data)
   const patientWithIdentifiers = appointment?.patient as
-    PatientRead | undefined;
+    | PatientRead
+    | undefined;
   const patientTags =
     patientWithIdentifiers?.instance_tags ?? patient?.instance_tags;
 
   const appointmentTags = appointment?.tags ?? [];
-
-  const patientExtensionData = usePatientExtensionData(
-    appointment?.patient?.extensions,
-    "appointment_print",
-  );
 
   return (
     <Card
@@ -96,29 +88,25 @@ const TokenCard = ({
                   {patient.name || "--"}
                 </p>
                 <p className="pl-1 text-sm text-gray-600 font-medium">
-                  <PatientAge patient={patient} />,{" "}
+                  {formatPatientAge(patient, true)},{" "}
                   {t(`GENDER__${patient.gender}`)}
                 </p>
-                {patientExtensionData.map((data) => {
-                  return (
-                    <div key={data.name} className="hidden print:block">
+                {patientWithIdentifiers?.instance_identifiers
+                  ?.filter(
+                    (identifier) =>
+                      identifier.config.config.use ===
+                      PatientIdentifierUse.official,
+                  )
+                  .map((identifier) => (
+                    <div key={identifier.config.id}>
                       <Label className="text-gray-600 text-sm">
-                        {data.name}:
+                        {identifier.config.config.display}:
                       </Label>
-                      <p className="font-semibold text-sm">{data.value}</p>
+                      <p className="font-semibold text-sm">
+                        {identifier.value}
+                      </p>
                     </div>
-                  );
-                })}
-                {getPatientIdentifiers(patientWithIdentifiers, {
-                  use: PatientIdentifierUse.official,
-                }).map((identifier) => (
-                  <div key={identifier.config.id}>
-                    <Label className="text-gray-600 text-sm">
-                      {identifier.config.config.display}:
-                    </Label>
-                    <p className="font-semibold text-sm">{identifier.value}</p>
-                  </div>
-                ))}
+                  ))}
                 {inPrintMode && patient.address?.trim() && (
                   <div>
                     <Label className="text-gray-600 text-sm">

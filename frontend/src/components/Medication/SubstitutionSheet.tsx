@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
@@ -30,7 +30,6 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet";
 import { ProductKnowledgeSelect } from "@/pages/Facility/services/inventory/ProductKnowledgeSelect";
 
@@ -44,94 +43,121 @@ import {
 } from "@/types/emr/medicationDispense/medicationDispense";
 import { ProductKnowledgeBase } from "@/types/inventory/productKnowledge/productKnowledge";
 
-export const substitutionSchema = z.object({
-  substitutedProductKnowledge: z
-    .custom<ProductKnowledgeBase>()
-    .refine((value) => value !== undefined, {
-      message: "Substituted product knowledge is required",
-    }),
-  type: z.enum(SubstitutionType),
-  reason: z.enum(SubstitutionReason),
-});
-
-export type SubstitutionFormValues = z.infer<typeof substitutionSchema>;
-
 interface SubstitutionSheetProps {
-  original: {
-    /** Used when original product knowledge exists */
-    productKnowledge?: ProductKnowledgeBase | null;
-    /** Used when no original product knowledge exists (e.g., medication without linked product) */
-    medicationName?: string | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  originalProductKnowledge?: ProductKnowledgeBase;
+  /** Used when no original product knowledge exists (e.g., medication without linked product) */
+  originalMedicationName?: string;
+  currentSubstitution?: {
+    substitutedProductKnowledge?: ProductKnowledgeBase;
+    type?: SubstitutionType;
+    reason?: SubstitutionReason;
   };
-  initialValue?: SubstitutionFormValues | null;
-  onSave: (value: SubstitutionFormValues) => void;
-  onClear: () => void;
-  trigger?: React.ReactNode;
+  /** Pre-selected substitute product (optional) */
+  preSelectedProduct?: ProductKnowledgeBase;
+  onSave: (
+    substitutionDetails?: {
+      substitutedProductKnowledge: ProductKnowledgeBase;
+      type: SubstitutionType;
+      reason: SubstitutionReason;
+    } | null, // null to clear substitution
+  ) => void;
+  facilityId: string;
 }
 
+const substitutionSchema = z.object({
+  substitutedProductKnowledge: z.any().refine((val) => val?.slug, {
+    message: "Product selection is required",
+  }),
+  type: z.nativeEnum(SubstitutionType),
+  reason: z.nativeEnum(SubstitutionReason),
+});
+
+type SubstitutionFormValues = z.infer<typeof substitutionSchema>;
+
 export function SubstitutionSheet({
-  original,
-  initialValue,
+  open,
+  onOpenChange,
+  originalProductKnowledge,
+  originalMedicationName,
+  currentSubstitution,
+  preSelectedProduct,
   onSave,
-  onClear,
-  trigger,
+  facilityId: _facilityId,
 }: SubstitutionSheetProps) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-
-  const defaultValues = useMemo(() => {
-    return (
-      initialValue ?? {
-        substitutedProductKnowledge: undefined,
-        type: SubstitutionType.E,
-        reason: SubstitutionReason.OS,
-      }
-    );
-  }, [initialValue]);
+  const [selectedSubstitute, setSelectedSubstitute] = useState<
+    ProductKnowledgeBase | undefined
+  >(currentSubstitution?.substitutedProductKnowledge || preSelectedProduct);
 
   const form = useForm<SubstitutionFormValues>({
     resolver: zodResolver(substitutionSchema),
-    defaultValues,
+    defaultValues: {
+      substitutedProductKnowledge:
+        currentSubstitution?.substitutedProductKnowledge ||
+        preSelectedProduct ||
+        undefined,
+      type: currentSubstitution?.type || SubstitutionType.E,
+      reason: currentSubstitution?.reason || SubstitutionReason.OS,
+    },
   });
 
+  useEffect(() => {
+    if (open) {
+      const initialProduct =
+        currentSubstitution?.substitutedProductKnowledge || preSelectedProduct;
+      form.reset({
+        substitutedProductKnowledge: initialProduct || undefined,
+        type: currentSubstitution?.type || SubstitutionType.E,
+        reason: currentSubstitution?.reason || SubstitutionReason.OS,
+      });
+      setSelectedSubstitute(initialProduct);
+    }
+  }, [open, currentSubstitution, preSelectedProduct, form]);
+
+  useEffect(() => {
+    form.setValue("substitutedProductKnowledge", selectedSubstitute, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  }, [selectedSubstitute, form]);
+
   const onSubmit = (values: SubstitutionFormValues) => {
-    onSave(values);
-    setOpen(false);
-    form.reset();
+    if (!values.substitutedProductKnowledge) return;
+    onSave({
+      substitutedProductKnowledge: values.substitutedProductKnowledge,
+      type: values.type,
+      reason: values.reason,
+    });
+    onOpenChange(false);
+  };
+
+  const handleProductSelect = (product: ProductKnowledgeBase | undefined) => {
+    if (!product) return;
+    setSelectedSubstitute(product);
   };
 
   const displayName =
-    original?.productKnowledge?.name || original?.medicationName;
+    originalProductKnowledge?.name || originalMedicationName || "";
 
-  const handleClear = () => {
-    onClear();
-    setOpen(false);
-    form.reset();
+  const handleClearSubstitution = () => {
+    onSave(null); // Pass null to indicate clearing
+    onOpenChange(false);
   };
 
-  useEffect(() => {
-    form.reset(defaultValues);
-  }, [defaultValues, form]);
-
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        {trigger || <Button variant="outline">{t("sub")}</Button>}
-      </SheetTrigger>
+    <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="flex h-full w-full flex-col sm:max-w-2xl">
         <SheetHeader className="space-y-3 pb-6">
           <SheetTitle className="text-xl font-semibold">
             {t("substitute_medication")}
           </SheetTitle>
-          <SheetDescription className="text-base" asChild>
+          <SheetDescription className="text-base">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <span className="whitespace-nowrap">
-                  {t("substituting_for")}:
-                </span>
-                <span className="wrap-anywhere">
-                  <Badge variant="secondary">{displayName}</Badge>
-                </span>
+                <span>{t("substituting_for")}:</span>
+                <Badge variant="secondary">{displayName}</Badge>
               </div>
               <p className="text-sm text-muted-foreground">
                 {t("select_alternative_medication_and_provide_details")}
@@ -143,31 +169,38 @@ export function SubstitutionSheet({
         <ScrollArea className="flex-1 pr-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Product Selection */}
               <FormField
                 control={form.control}
                 name="substitutedProductKnowledge"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
                     <FormLabel className="text-base font-medium" aria-required>
                       {t("select_substitute_product")}
                     </FormLabel>
-                    <ProductKnowledgeSelect
-                      {...field}
-                      placeholder={t("search_substitute_medications")}
-                      className="w-full"
-                    />
+
+                    <div className="space-y-3">
+                      <ProductKnowledgeSelect
+                        value={selectedSubstitute}
+                        onChange={handleProductSelect}
+                        placeholder={t("search_substitute_medications")}
+                        className="w-full"
+                      />
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
+              {/* Substitution Type */}
               <FormField
                 control={form.control}
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-base font-medium" aria-required>
+                    <FormLabel className="text-base font-medium">
                       {t("substitution_type")}
+                      <span className="text-destructive ml-1">*</span>
                     </FormLabel>
                     <Select
                       onValueChange={field.onChange}
@@ -182,14 +215,14 @@ export function SubstitutionSheet({
                           </SelectValue>
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent className="max-w-(--radix-select-trigger-width) w-full">
+                      <SelectContent className="max-w-[var(--radix-select-trigger-width)] w-full">
                         {Object.values(SubstitutionType).map((type) => (
                           <SelectItem key={type} value={type} className="py-3">
                             <div className="space-y-1">
                               <p className="font-medium">
                                 {getSubstitutionTypeDisplay(t, type)}
                               </p>
-                              <p className="text-xs text-gray-600">
+                              <p className="text-xs text-muted-foreground">
                                 {getSubstitutionTypeDescription(t, type)}
                               </p>
                             </div>
@@ -202,13 +235,15 @@ export function SubstitutionSheet({
                 )}
               />
 
+              {/* Substitution Reason */}
               <FormField
                 control={form.control}
                 name="reason"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-base font-medium" aria-required>
+                    <FormLabel className="text-base font-medium">
                       {t("substitution_reason")}
+                      <span className="text-destructive ml-1">*</span>
                     </FormLabel>
                     <Select
                       onValueChange={field.onChange}
@@ -223,7 +258,7 @@ export function SubstitutionSheet({
                           </SelectValue>
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent className="max-w-(--radix-select-trigger-width) w-full">
+                      <SelectContent className="max-w-[var(--radix-select-trigger-width)] w-full">
                         {Object.values(SubstitutionReason).map((reason) => (
                           <SelectItem
                             key={reason}
@@ -234,7 +269,7 @@ export function SubstitutionSheet({
                               <p className="font-medium">
                                 {getSubstitutionReasonDisplay(t, reason)}
                               </p>
-                              <p className="text-xs text-gray-600">
+                              <p className="text-xs text-muted-foreground">
                                 {getSubstitutionReasonDescription(t, reason)}
                               </p>
                             </div>
@@ -256,8 +291,11 @@ export function SubstitutionSheet({
               <Button
                 type="button"
                 variant="outline"
-                onClick={handleClear}
-                disabled={!initialValue}
+                onClick={handleClearSubstitution}
+                disabled={
+                  !currentSubstitution?.substitutedProductKnowledge &&
+                  !selectedSubstitute
+                }
                 className="flex-1 sm:flex-initial"
               >
                 {t("clear")}
@@ -274,7 +312,7 @@ export function SubstitutionSheet({
               <Button
                 type="submit"
                 onClick={form.handleSubmit(onSubmit)}
-                disabled={!form.formState.isValid}
+                disabled={!form.formState.isValid || !selectedSubstitute}
                 className="flex-1 sm:flex-initial"
               >
                 {t("save")}
