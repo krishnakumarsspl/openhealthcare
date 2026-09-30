@@ -243,8 +243,8 @@ export const DrawingPage = ({
                   <div className="relative">
                     <div className="h-60 md:h-40 w-full bg-gray-50">
                       <ExcalidrawPreview
-                        elements={drawing.object_value.elements}
-                        files={drawing.object_value.files}
+                        elements={drawing.object_value.elements || []}
+                        files={drawing.object_value.files || {}}
                         key={drawing.modified_date}
                       />
                     </div>
