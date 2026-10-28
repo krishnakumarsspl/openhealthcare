@@ -43,6 +43,16 @@ from care.emr.resources.patient_identifier.default_expression_evaluator import (
     evaluate_patient_default_expression,
     evaluate_patient_facility_default_values,
 )
+from care.emr.models import (
+    Encounter,
+    EncounterOrganization,
+    FacilityOrganization,
+    Patient,
+)
+from care.emr.models.report.template import Template
+from care.emr.reports.report_utils import generate_and_upload_report
+from care.utils.whatsapp.wati import WATIClient
+
 from care.emr.resources.tag.config_spec import TagResource
 from care.emr.tagging.filters import SingleFacilityTagFilter
 from care.facility.models import Facility
@@ -52,6 +62,7 @@ from care.utils.filters.multiselect import MultiSelectFilter
 from care.utils.lock import ObjectLocked
 from care.utils.shortcuts import get_object_or_404
 from care.utils.time_util import care_now
+from django.db.models import Q
 
 
 class LiveFilter(filters.CharFilter):
@@ -342,6 +353,85 @@ class EncounterViewSet(
         )
         return Response(FacilityOrganizationReadSpec.serialize(organization).to_json())
 
+    @action(detail=True, methods=["POST"])
+    def send_treatment_summary_whatsapp(self, request, *args, **kwargs):
+        encounter = self.get_object()
+
+        self.authorize_retrieve(encounter)
+
+        phone_number = encounter.patient.phone_number
+
+        if not phone_number:
+            raise ValidationError(
+                "Patient does not have a phone number"
+            )
+
+        template = Template.objects.filter(
+            name="Treatment Summary",
+            template_type="discharge_summary",
+            status="active",
+        ).filter(
+            Q(facility=encounter.facility) |
+            Q(facility__isnull=True)
+        ).order_by("-facility_id").first()
+
+        if not template:
+            raise ValidationError(
+                "Treatment Summary template not found"
+            )
+
+        # Generate the treatment summary PDF
+        report_upload = generate_and_upload_report(
+            template=template,
+            report_type=template.template_type,
+            associating_id=str(encounter.external_id),
+            output_format="pdf",
+            user_id=request.user.id,
+        )
+
+        # Get generated PDF bytes
+        content_type, pdf_bytes = (
+            report_upload.files_manager.file_contents(report_upload)
+        )
+
+        # Initialize WATI client
+        wati_client = WATIClient()
+
+        # TODO: Obtain the actual accessible, secure PDF URL
+        # from the generated report/upload object.
+        report_url ="https://example.com/reports/12345.pdf"
+
+        if not report_url:
+            raise ValidationError(
+                "Treatment summary PDF URL is not available. "
+                "Configure the report's secure URL before sending the template."
+            )
+
+        wati_response = wati_client.send_report_available(
+            phone=phone_number,
+            name=encounter.patient.name,
+            report_url=report_url,
+            sender_name=encounter.facility.name,
+        )
+
+        if not wati_response.get("success"):
+            logger.error(
+                "Treatment Summary WhatsApp failed: %s",
+                wati_response,
+            )
+
+            raise ValidationError(
+                "WhatsApp message could not be sent. "
+                "Please check the WATI response in server logs."
+            )
+
+        return Response(
+            {
+                "message": "Treatment Summary sent successfully",
+                "phone_number": phone_number,
+            },
+            status=status.HTTP_200_OK,
+        )
     @extend_schema(
         request=EncounterOrganizationManageSpec,
     )

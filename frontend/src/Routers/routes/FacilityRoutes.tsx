@@ -28,11 +28,15 @@ import DiagnosticReportPrint from "@/pages/Facility/services/diagnosticReports/D
 import DiagnosticReportView from "@/pages/Facility/services/diagnosticReports/DiagnosticReportView";
 import ServiceRequestShow from "@/pages/Facility/services/serviceRequests/ServiceRequestShow";
 import { SettingsLayout } from "@/pages/Facility/settings/layout";
+import OTSetup from "@/pages/Facility/ot/OTSetup";
 
 const FacilityRoutes: AppRoutes = {
   "/facility": () => <Redirect to="/" />,
   "/facility/:facilityId/overview": ({ facilityId }) => (
     <FacilityOverview facilityId={facilityId} />
+  ),
+  "/facility/:facilityId/ot/setup": ({ facilityId }) => (
+    <OTSetup facilityId={facilityId} />
   ),
   "/facility/:facilityId/bed-availability": ({ facilityId }) => (
     <BedAvailabilityDashboard facilityId={facilityId} />

@@ -36,6 +36,11 @@ export default {
     method: HttpMethod.POST,
     TRes: Type<EncounterRead>(),
   },
+  sendTreatmentSummaryWhatsApp: {
+    path: "/api/v1/encounter/{external_id}/send_treatment_summary_whatsapp/",
+    method: HttpMethod.POST,
+    TRes: Type<unknown>(),
+  },
 
   // Organization Management
   addOrganization: {

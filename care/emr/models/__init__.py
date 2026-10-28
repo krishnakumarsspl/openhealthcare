@@ -31,3 +31,4 @@ from .supply_delivery import *  # noqa F403
 from .supply_request import *  # noqa F403
 from .tag_config import *  # noqa F403
 from .valueset import *  # noqa F403
+from .ot import *  # noqa: F403

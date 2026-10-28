@@ -55,6 +55,7 @@ export function LocationSearch({
   const isMobile = useBreakpoints({ default: true, sm: false });
 
   const { data: locations } = useQuery({
+    queryKey: ["locations", facilityId, mode, form, search],
     queryKey: ["locations", facilityId, mode, search],
     queryFn: query.debounced(locationApi.list, {
       pathParams: { facility_id: facilityId },
@@ -62,6 +63,14 @@ export function LocationSearch({
     }),
     enabled: facilityId !== "preview",
   });
+
+  const filteredLocations = (locations?.results ?? []).filter(
+    (location) =>
+      location.mode === "instance" &&
+      location.form === "ro" &&
+      location.status?.toLowerCase() === "active",
+  );
+
   const commandContent = (
     <Command className="pt-1" shouldFilter={false}>
       <CommandInput
