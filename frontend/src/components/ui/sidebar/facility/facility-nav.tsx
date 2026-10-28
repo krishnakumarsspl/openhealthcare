@@ -93,6 +93,35 @@ function generateFacilityLinks(
       url: `${baseUrl}/services`,
       icon: <CareIcon icon="d-microscope" />,
     },
+
+    {
+      name: "OT Department",
+      url: `${baseUrl}/ot`,
+      icon: <CareIcon icon="d-hospital" />,
+      children: [
+        {
+          name: "OT Setup",
+          url: `${baseUrl}/ot/setup`,
+        },
+        {
+          name: "OT Scheduling",
+          url: `${baseUrl}/ot/scheduling`,
+        },
+        {
+          name: "Pre-OT",
+          url: `${baseUrl}/ot/pre-ot`,
+        },
+        {
+          name: "OT Management",
+          url: `${baseUrl}/ot/management`,
+        },
+        {
+          name: "Post-OT/Recovery",
+          url: `${baseUrl}/ot/management`,
+        },
+      ],
+    },
+
     {
       name: t("resource"),
       url: `${baseUrl}/resource`,

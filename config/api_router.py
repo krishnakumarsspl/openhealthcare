@@ -110,7 +110,15 @@ from care.security.api.viewsets.permissions import PermissionViewSet
 from care.security.api.viewsets.roles import RoleViewSet
 from care.users.api.otp_viewset.reset_password import OTPResetPasswordView
 from care.users.api.viewsets.plug_config import PlugConfigViewset
-
+from care.emr.api.viewsets.location import (
+    FacilityLocationEncounterViewSet,
+    FacilityLocationViewSet,
+)
+from care.emr.api.viewsets.ot import (
+    OTRoomViewSet,
+    SurgeryProcedureViewSet,
+    AnaesthesiaViewSet,
+)
 router = DefaultRouter() if settings.DEBUG else SimpleRouter()
 
 router.register("users", UserViewSet, basename="users")
@@ -282,6 +290,24 @@ facility_nested_router.register(
     r"location",
     FacilityLocationViewSet,
     basename="location",
+)
+
+facility_nested_router.register(
+    r"ot_room",
+    OTRoomViewSet,
+    basename="ot-room",
+)
+
+facility_nested_router.register(
+    r"surgery_procedure",
+    SurgeryProcedureViewSet,
+    basename="surgery-procedure",
+)
+
+facility_nested_router.register(
+    r"anaesthesia",
+    AnaesthesiaViewSet,
+    basename="anaesthesia",
 )
 
 facility_nested_router.register(

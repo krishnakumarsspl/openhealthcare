@@ -42,6 +42,7 @@ type Props = {
   facility?: FacilityRead;
   templateSlug: string;
   hideFacilityHeader?: boolean;
+  onSendWhatsApp?: () => void;
 };
 
 export default function PrintPreview(props: Props) {
@@ -133,6 +134,16 @@ export default function PrintPreview(props: Props) {
               {t("print")}
               <ShortcutBadge actionId="print-button" className="bg-white" />
             </Button>
+
+            {props.onSendWhatsApp && (
+              <Button
+                variant="primary"
+                disabled={props.disabled || isPrinting}
+                onClick={props.onSendWhatsApp}
+              >
+                Send to WhatsApp
+              </Button>
+            )}
           </div>
         }
       >

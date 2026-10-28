@@ -28,8 +28,9 @@ import serviceRequestApi from "@/types/emr/serviceRequest/serviceRequestApi";
 import symptomApi from "@/types/emr/symptom/symptomApi";
 import { PrintTemplateType } from "@/types/facility/printTemplate";
 import { PatientIdentifierUse } from "@/types/patient/patientIdentifierConfig/patientIdentifierConfig";
+import mutate from "@/Utils/request/mutate";
 import query from "@/Utils/request/query";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useTranslation } from "react-i18next";
 import { formatPhoneNumberIntl } from "react-phone-number-input";
@@ -85,6 +86,20 @@ export default function TreatmentSummary({
       },
     }),
     enabled: !!patientId,
+  });
+
+  const sendTreatmentSummaryWhatsAppMutation = useMutation({
+    mutationFn: mutate(encounterApi.sendTreatmentSummaryWhatsApp, {
+      pathParams: {
+        external_id: encounterId,
+      },
+    }),
+    onSuccess: () => {
+      alert("Treatment Summary sent successfully on WhatsApp!");
+    },
+    onError: () => {
+      alert("Failed to send Treatment Summary on WhatsApp. Please try again.");
+    },
   });
 
   const { hasPermission } = usePermissions();
@@ -204,6 +219,9 @@ export default function TreatmentSummary({
         facility={facility}
         disabled={isLoading}
         templateSlug={PrintTemplateType.treatment_summary}
+        onSendWhatsApp={() => {
+          sendTreatmentSummaryWhatsAppMutation.mutate({});
+        }}
       >
         <div className="py-2 max-w-4xl mx-auto">
           <div className="space-y-6">

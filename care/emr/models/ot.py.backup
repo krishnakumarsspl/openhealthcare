@@ -1,0 +1,49 @@
+from django.db import models
+
+from care.emr.models.base import EMRBaseModel
+
+
+class OTRoom(EMRBaseModel):
+    facility = models.ForeignKey(
+        "facility.Facility",
+        on_delete=models.PROTECT,
+        related_name="ot_rooms",
+    )
+
+    # Link to the existing room in Location Master.
+    location = models.ForeignKey(
+        "emr.FacilityLocation",
+        on_delete=models.PROTECT,
+        related_name="ot_room_configurations",
+    )
+
+    description = models.TextField(blank=True, default="")
+
+    equipment_details = models.JSONField(
+        default=list,
+        blank=True,
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ("available", "Available"),
+            ("occupied", "Occupied"),
+            ("maintenance", "Maintenance"),
+            ("inactive", "Inactive"),
+        ],
+        default="available",
+    )
+
+    class Meta:
+        db_table = "emr_ot_room"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["facility", "location"],
+                name="unique_ot_location_per_facility",
+            )
+        ]
+        ordering = ["location__name"]
+
+    def __str__(self):
+        return f"{self.location.name} - {self.get_status_display()}"

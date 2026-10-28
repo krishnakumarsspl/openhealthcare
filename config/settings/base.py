@@ -740,3 +740,15 @@ TOTP_DISABLED_EMAIL_TEMPLATE_PATH = env(
 
 # Cleanup incomplete file uploads, set to 0 to disable
 FILE_UPLOAD_EXPIRY_HOURS = env.int("FILE_UPLOAD_EXPIRY_HOURS", default=24)
+
+WATI_BASE_URL = env(
+    "WATI_BASE_URL",
+    default="",
+)
+
+WATI_ACCESS_TOKEN = env(
+    "WATI_ACCESS_TOKEN",
+    default="",
+)
+
+WATI_CHANNEL_NUMBER = env("WATI_CHANNEL_NUMBER", default="")

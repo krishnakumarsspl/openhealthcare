@@ -1,0 +1,76 @@
+from care.emr.models.ot import OTRoom, SurgeryProcedurefrom enum import Enum
+
+from pydantic import UUID4, Field
+
+from care.emr.models.location import FacilityLocation
+from care.emr.models.ot import OTRoom
+from care.emr.resources.base import EMRResource
+
+
+class OTRoomStatusChoices(str, Enum):
+    available = "available"
+    occupied = "occupied"
+    maintenance = "maintenance"
+    inactive = "inactive"
+
+
+class OTRoomBaseSpec(EMRResource):
+    __model__ = OTRoom
+    __exclude__ = ["facility"]
+
+    id: UUID4 | None = None
+
+
+class OTRoomSpec(OTRoomBaseSpec):
+    location: UUID4
+    description: str = ""
+    equipment_details: list = Field(default_factory=list)
+    status: OTRoomStatusChoices = OTRoomStatusChoices.available
+
+    def perform_extra_deserialization(self, is_update, obj):
+        location = FacilityLocation.objects.get(
+            external_id=self.location,
+            deleted=False,
+        )
+        obj.location = location
+
+
+class OTRoomWriteSpec(OTRoomSpec):
+    pass
+
+
+class OTRoomUpdateSpec(OTRoomSpec):
+    pass
+
+
+class OTRoomListSpec(OTRoomSpec):
+    facility: dict | None = None
+    location_name: str | None = None
+    created_date: str | None = None
+    modified_date: str | None = None
+
+    @classmethod
+    def perform_extra_serialization(cls, mapping, obj):
+        mapping["id"] = obj.external_id
+        mapping["location"] = str(obj.location.external_id)
+        mapping["location_name"] = obj.location.name
+        mapping["facility"] = {
+            "id": str(obj.facility.external_id),
+            "name": obj.facility.name,
+        }
+        mapping["created_date"] = (
+            obj.created_date.isoformat() if obj.created_date else None
+        )
+        mapping["modified_date"] = (
+            obj.modified_date.isoformat() if obj.modified_date else None
+        )
+
+
+class OTRoomRetrieveSpec(OTRoomListSpec):
+    created_by: dict | None = None
+    updated_by: dict | None = None
+
+    @classmethod
+    def perform_extra_serialization(cls, mapping, obj):
+        super().perform_extra_serialization(mapping, obj)
+        cls.serialize_audit_users(mapping, obj)

@@ -55,13 +55,21 @@ export function LocationSearch({
   const isMobile = useBreakpoints({ default: true, sm: false });
 
   const { data: locations } = useQuery({
-    queryKey: ["locations", facilityId, mode, search],
+    queryKey: ["locations", facilityId, mode, form, search],
     queryFn: query.debounced(locationApi.list, {
       pathParams: { facility_id: facilityId },
       queryParams: { mode, name: search, form },
     }),
     enabled: facilityId !== "preview",
   });
+
+  const filteredLocations = (locations?.results ?? []).filter(
+    (location) =>
+      location.mode === "instance" &&
+      location.form === "ro" &&
+      location.status?.toLowerCase() === "active",
+  );
+
   const commandContent = (
     <Command className="pt-1" shouldFilter={false}>
       <CommandInput
@@ -71,23 +79,28 @@ export function LocationSearch({
         onValueChange={setSearch}
         autoFocus
       />
-      <CommandEmpty>{t("no_locations_found")}</CommandEmpty>
-      <CommandGroup>
-        {locations?.results.map((location) => (
-          <CommandItem
-            key={location.id}
-            value={location.id}
-            onSelect={() => {
-              onSelect(location);
-              setOpen(false);
-            }}
-          >
-            {stringifyNestedObject(location)}
-          </CommandItem>
-        ))}
-      </CommandGroup>
+
+      {filteredLocations.length === 0 ? (
+        <CommandEmpty>{t("no_locations_found")}</CommandEmpty>
+      ) : (
+        <CommandGroup>
+          {filteredLocations.map((location) => (
+            <CommandItem
+              key={location.id}
+              value={location.id}
+              onSelect={() => {
+                onSelect(location);
+                setOpen(false);
+              }}
+            >
+              {stringifyNestedObject(location)}
+            </CommandItem>
+          ))}
+        </CommandGroup>
+      )}
     </Command>
   );
+
 
   if (isMobile) {
     return (
