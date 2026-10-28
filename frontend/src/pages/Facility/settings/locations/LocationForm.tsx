@@ -214,45 +214,37 @@ export default function LocationForm({
     },
   });
 
-function onSubmit(values: FormValues) {
-  const parent = values.parent || parentId || undefined;
-
-  const mode: LocationWrite["mode"] =
-    values.form === "bd" || (values.form === "ro" && !!parent)
-      ? "instance"
-      : "kind";
-
-  const data: LocationWrite = {
-    ...values,
-    mode,
-    description: values.description || "",
-    organizations: values.organizations,
-    parent,
-  };
-
-  if (values.form === "bd" && !isEditMode && values.enableBulkCreation) {
-    const batchRequest: BatchRequestBody = {
-      requests: values.bedNames.map((bed) => ({
-        url: `/api/v1/facility/${facilityId}/location/`,
-        method: "POST",
-        reference_id: parent ? `Location ${parent}` : "Location",
-        body: {
-          ...data,
-          name: bed.name,
-        },
-      })),
+  function onSubmit(values: FormValues) {
+    const data: LocationWrite = {
+      ...values,
+      mode: values.form === "bd" ? "instance" : "kind",
+      description: values.description || "",
+      organizations: values.organizations,
+      parent: values.parent || undefined,
     };
 
-    submitBatch(batchRequest);
-    return;
-  }
+    if (values.form === "bd" && !isEditMode && values.enableBulkCreation) {
+      const batchRequest: BatchRequestBody = {
+        requests: values.bedNames.map((bed) => ({
+          url: `/api/v1/facility/${facilityId}/location/`,
+          method: "POST",
+          reference_id: parentId ? `Location ${parentId}` : "Location",
+          body: {
+            ...data,
+            name: bed.name,
+          },
+        })),
+      };
+      submitBatch(batchRequest);
+      return;
+    }
 
-  if (location?.id) {
-    data.id = location.id;
-  }
+    if (location?.id) {
+      data.id = location.id;
+    }
 
-  submitForm(data);
-}
+    submitForm(data);
+  }
 
   const statusOptions: { value: Status; label: string }[] = [
     { value: "active", label: "Active" },
