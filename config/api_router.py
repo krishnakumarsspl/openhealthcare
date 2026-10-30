@@ -118,18 +118,16 @@ from care.emr.api.viewsets.ot import (
     OTRoomViewSet,
     SurgeryProcedureViewSet,
     AnaesthesiaViewSet,
+    SurgeryAnaesthesiaConfigViewSet,
 )
+
 router = DefaultRouter() if settings.DEBUG else SimpleRouter()
 
 router.register("users", UserViewSet, basename="users")
-
 router.register("plug_config", PlugConfigViewset, basename="plug_configs")
-
 user_nested_router = NestedSimpleRouter(router, r"users", lookup="users")
-
 router.register("files", FileUploadViewSet, basename="files")
 router.register("meta_artifacts", MetaArtifactViewSet, basename="meta_artifacts")
-
 router.register("otp", OTPLoginView, basename="otp-login")
 router.register(
     "otp/password_reset", OTPResetPasswordView, basename="otp-password-reset"
@@ -308,6 +306,12 @@ facility_nested_router.register(
     r"anaesthesia",
     AnaesthesiaViewSet,
     basename="anaesthesia",
+)
+
+facility_nested_router.register(
+    r"surgery_anaesthesia_config",
+    SurgeryAnaesthesiaConfigViewSet,
+    basename="surgery-anaesthesia-config",
 )
 
 facility_nested_router.register(
