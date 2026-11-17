@@ -8,6 +8,9 @@ services:
         ADDITIONAL_PLUGS: ${ADDITIONAL_PLUGS:-}
     env_file:
       - ./docker/.local.env
+    environment:
+      POSTGRES_HOST: db
+      DATABASE_URL: postgres://postgres:postgres@db:5432/care
     volumes:
       - .:/app
     entrypoint: ["bash", "scripts/start-dev.sh"]
@@ -27,6 +30,9 @@ services:
     image: care_local
     env_file:
       - ./docker/.local.env
+    environment:
+      POSTGRES_HOST: db
+      DATABASE_URL: postgres://postgres:postgres@db:5432/care
     entrypoint: ["bash", "scripts/celery-dev.sh"]
     restart: unless-stopped
     depends_on:
