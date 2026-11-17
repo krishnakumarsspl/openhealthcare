@@ -16,7 +16,7 @@ services:
     entrypoint: ["bash", "scripts/start-dev.sh"]
     ports:
       - "9000:9000"
-      - "9876:9876" #debugpy
+      - "9876:9876"
     restart: unless-stopped
     depends_on:
       db:
