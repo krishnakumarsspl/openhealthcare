@@ -66,23 +66,7 @@ jobs:
           docker compose -f docker-compose.yaml -f docker-compose.local.yaml up -d --wait || \
           (docker compose -f docker-compose.yaml -f docker-compose.local.yaml logs && exit 1)
 
-      - name: Inspect Celery health
-        if: always()
-        run: |
-          COMPOSE="docker compose -f docker-compose.yaml -f docker-compose.local.yaml"
-          echo "===== Container Status ====="
-          $COMPOSE ps -a
-
-          echo "===== Celery Health ====="
-          CELERY_ID=$($COMPOSE ps -aq celery | head -n 1)
-          if [ -n "$CELERY_ID" ]; then
-            docker inspect "$CELERY_ID" --format '{{json .State.Health}}'
-          else
-            echo "Celery container was not created."
-          fi
-
-          echo "===== Celery Logs ====="
-          $COMPOSE logs --no-color --tail=200 celery || true
+  
 
       - name: Check missing migrations
         run: make checkmigration
