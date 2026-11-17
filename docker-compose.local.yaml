@@ -40,3 +40,9 @@ services:
       - redis
     volumes:
       - .:/app
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A config.celery_app inspect ping -d celery@$HOSTNAME"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 20s
