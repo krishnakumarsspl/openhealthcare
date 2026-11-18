@@ -318,13 +318,13 @@ class OTOperationViewSet(GenericViewSet):
                         surgery_schedule=schedule,
                         deleted=False,
                     )
-                except OTPreOperativeAssessment.DoesNotExist as err:
+                except OTPreOperativeAssessment.DoesNotExist:
                     raise ValidationError({
                         "status": (
                             "Complete the pre-operative assessment "
                             "before starting the operation."
                         )
-                    }) from err
+                    })
 
                 if assessment.fitness_status != "fit":
                     raise ValidationError({
