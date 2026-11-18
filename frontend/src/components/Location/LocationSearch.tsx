@@ -56,7 +56,6 @@ export function LocationSearch({
 
   const { data: locations } = useQuery({
     queryKey: ["locations", facilityId, mode, form, search],
-    queryKey: ["locations", facilityId, mode, search],
     queryFn: query.debounced(locationApi.list, {
       pathParams: { facility_id: facilityId },
       queryParams: { mode, name: search, form },
