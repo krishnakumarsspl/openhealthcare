@@ -77,7 +77,24 @@ jobs:
               --format '{{json .State.Health}}' || true
 
             exit 1
-          }   
+          }  
+      - name: Check backend container status
+        if: always()
+        run: |
+          echo "===== COMPOSE SERVICES ====="
+          docker compose config --services
+
+          echo
+          echo "===== ALL CONTAINER STATUS ====="
+          docker compose ps -a
+
+          echo
+          echo "===== BACKEND LOGS ====="
+          docker compose logs --no-color --tail=200 backend || true
+
+          echo
+          echo "===== CELERY LOGS ====="
+          docker compose logs --no-color --tail=100 celery || true       
 
       - name: Check missing migrations
         run: make checkmigration
