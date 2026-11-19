@@ -110,6 +110,9 @@ jobs:
           echo "===== CONTAINER ID ====="
           echo "$CELERY_ID"
 
+          echo "===== WAIT 180 SECONDS FOR CELERY STARTUP ====="
+          sleep 180
+
           echo "===== CONTAINER HOSTNAME ====="
           docker exec "$CELERY_ID" sh -c 'echo "$HOSTNAME"'
 
