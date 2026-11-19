@@ -63,18 +63,41 @@ jobs:
 
       - name: Start services
         run: |
-          docker compose -f docker-compose.yaml -f docker-compose.local.yaml up -d --build celery backend
+          set +e
       
-          echo "===== COMBINED STATUS ====="
-          docker compose -f docker-compose.yaml -f docker-compose.local.yaml ps -a
+          COMPOSE="docker compose -f docker-compose.yaml -f docker-compose.local.yaml"
+      
+          echo "===== START DEPENDENCIES ====="
+          $COMPOSE up -d db redis minio
+      
+          echo "===== BUILD APPLICATION ====="
+          $COMPOSE build backend celery
+      
+          echo "===== START CELERY WITHOUT WAIT ====="
+          $COMPOSE up -d --no-deps celery
+      
+          sleep 20
+      
+          echo "===== CELERY STATUS ====="
+          $COMPOSE ps -a celery
       
           echo "===== CELERY LOGS ====="
-          docker compose -f docker-compose.yaml -f docker-compose.local.yaml logs --no-color celery
+          $COMPOSE logs --no-color --tail=200 celery
       
-          echo "===== BACKEND LOGS ====="
-          docker compose -f docker-compose.yaml -f docker-compose.local.yaml logs --no-color backend
+          echo "===== CELERY INSPECT ====="
+          $COMPOSE exec -T celery celery -A config.celery_app inspect ping
       
-          docker compose -f docker-compose.yaml -f docker-compose.local.yaml up -d --wait
+          echo "===== CELERY HEALTH ====="
+          docker inspect openhealthcare-celery-1 \
+            --format '{{json .State.Health}}'
+      
+          echo "===== BACKEND START ====="
+          $COMPOSE up -d --no-deps backend
+      
+          echo "===== ALL STATUS ====="
+          $COMPOSE ps -a
+      
+          exit 1
           
       - name: Diagnose backend and celery startup
         run: |
