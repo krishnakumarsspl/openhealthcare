@@ -101,40 +101,41 @@ jobs:
       - name: Diagnose Celery worker
         if: always()
         run: |
-          COMPOSE="docker compose -f docker-compose.yaml -f docker-compose.local.yaml"
-      
-          echo "===== CELERY STARTUP SCRIPT ====="
-          cat scripts/celery-dev.sh
-      
-          echo
-          echo "===== EFFECTIVE CELERY HEALTHCHECK ====="
-          $COMPOSE config | sed -n '/celery:/,/^[^ ]/p'
-      
-          echo
-          echo "===== WAIT 60 SECONDS ====="
-          sleep 60
-      
-          echo
+          set +e
+
+          CELERY_ID=$(docker compose \
+            -f docker-compose.yaml \
+            -f docker-compose.local.yaml ps -q celery)
+
+          echo "===== CONTAINER ID ====="
+          echo "$CELERY_ID"
+
           echo "===== CONTAINER HOSTNAME ====="
-          docker exec openhealthcare-celery-1 hostname
-      
-          echo
+          docker exec "$CELERY_ID" sh -c 'echo "$HOSTNAME"'
+
           echo "===== CELERY PROCESSES ====="
-          docker exec openhealthcare-celery-1 ps aux
-      
-          echo
-          echo "===== CELERY WORKER PING ====="
-          docker exec openhealthcare-celery-1 \
-            celery -A config.celery_app inspect ping
-      
-          echo
+          docker exec "$CELERY_ID" sh -c '
+            for p in /proc/[0-9]*/cmdline; do
+              [ -r "$p" ] || continue
+              printf "%s: " "$p"
+              tr "\000" " " < "$p"
+              echo
+            done
+          '
+
+          echo "===== CELERY PING ====="
+          docker exec "$CELERY_ID" sh -c \
+            'celery -A config.celery_app inspect ping -d "celery@$HOSTNAME"'
+          echo "Ping exit code: $?"
+
           echo "===== CELERY LOGS ====="
-          $COMPOSE logs --no-color --tail=250 celery
+          docker compose -f docker-compose.yaml \
+            -f docker-compose.local.yaml logs --tail=150 celery
+
+          echo "===== CELERY HEALTH STATUS ====="
+          docker inspect "$CELERY_ID" \
+            --format '{{json .State.Health}}'    
       
-          echo
-          echo "===== HEALTH STATUS ====="
-          docker inspect openhealthcare-celery-1 \
-            --format '{{json .State.Health}}'   
                 
       - name: Diagnose backend and celery startup
         run: |
