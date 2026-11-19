@@ -63,31 +63,21 @@ jobs:
 
       - name: Start services
         run: |
-          docker compose -f docker-compose.yaml -f docker-compose.local.yaml up -d --wait || \
-          (docker compose -f docker-compose.yaml -f docker-compose.local.yaml logs && exit 1)
+          docker compose up -d --wait || {
+            echo "===== COMPOSE START FAILED ====="
 
-      - name: Diagnose unhealthy containers
-        if: always()
-        run: |
-          echo "===== CONTAINER STATUS ====="
-          docker compose -f docker-compose.yaml -f docker-compose.local.yaml ps -a
+            echo "===== CONTAINER STATUS ====="
+            docker compose ps -a
 
-          echo
-          echo "===== CELERY LOGS ====="
-          docker compose -f docker-compose.yaml -f docker-compose.local.yaml logs --no-color --tail=250 celery
+            echo "===== ALL SERVICE LOGS ====="
+            docker compose logs --no-color --tail=250
 
-          echo
-          echo "===== CELERY HEALTH DETAILS ====="
-          docker inspect openhealthcare-celery-1 \
-            --format '{{json .State.Health}}' || true
+            echo "===== CELERY HEALTH DETAILS ====="
+            docker inspect openhealthcare-celery-1 \
+              --format '{{json .State.Health}}' || true
 
-          echo
-          echo "===== BACKEND LOGS ====="
-          docker compose -f docker-compose.yaml -f docker-compose.local.yaml logs --no-color --tail=150 backend
-
-          echo
-          echo "===== REDIS LOGS ====="
-          docker compose -f docker-compose.yaml -f docker-compose.local.yaml logs --no-color --tail=100 redis    
+            exit 1
+          }   
 
       - name: Check missing migrations
         run: make checkmigration
