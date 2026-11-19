@@ -94,7 +94,27 @@ jobs:
 
           echo
           echo "===== CELERY LOGS ====="
-          docker compose logs --no-color --tail=100 celery || true       
+          docker compose logs --no-color --tail=100 celery || true    
+      - name: Diagnose Docker Compose services
+        run: |
+          echo "===== COMPOSE FILES ====="
+          ls -l docker-compose.yaml docker-compose.local.yaml
+      
+          echo
+          echo "===== BASE SERVICES ====="
+          docker compose -f docker-compose.yaml config --services
+      
+          echo
+          echo "===== COMBINED SERVICES ====="
+          docker compose -f docker-compose.yaml -f docker-compose.local.yaml config --services
+      
+          echo
+          echo "===== LOCAL COMPOSE SERVICE DEFINITIONS ====="
+          grep -nE '^(services:|  [A-Za-z0-9_.-]+:)' docker-compose.local.yaml
+      
+          echo
+          echo "===== COMBINED CONTAINER STATUS ====="
+          docker compose -f docker-compose.yaml -f docker-compose.local.yaml ps -a   
 
       - name: Check missing migrations
         run: make checkmigration
