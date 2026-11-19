@@ -77,7 +77,33 @@ jobs:
               --format '{{json .State.Health}}' || true
 
             exit 1
-          }  
+          } 
+          
+      - name: Diagnose backend and celery startup
+        run: |
+          echo "===== LOCAL COMPOSE FILE ====="
+          cat docker-compose.local.yaml
+      
+          echo
+          echo "===== COMPOSE PROFILES ====="
+          docker compose -f docker-compose.yaml -f docker-compose.local.yaml config --profiles
+      
+          echo
+          echo "===== ALL SERVICES ====="
+          docker compose -f docker-compose.yaml -f docker-compose.local.yaml config --services
+      
+          echo
+          echo "===== ALL CONTAINERS INCLUDING EXITED ====="
+          docker compose -f docker-compose.yaml -f docker-compose.local.yaml ps -a
+      
+          echo
+          echo "===== BACKEND LOGS ====="
+          docker compose -f docker-compose.yaml -f docker-compose.local.yaml logs --no-color backend || true
+      
+          echo
+          echo "===== CELERY LOGS ====="
+          docker compose -f docker-compose.yaml -f docker-compose.local.yaml logs --no-color celery || true
+                
       - name: Check backend container status
         if: always()
         run: |
