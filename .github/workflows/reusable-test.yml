@@ -63,83 +63,55 @@ jobs:
 
       - name: Start services
         run: |
-          set +e
+          set -euo pipefail
       
           COMPOSE="docker compose -f docker-compose.yaml -f docker-compose.local.yaml"
       
           echo "===== START DEPENDENCIES ====="
           $COMPOSE up -d db redis minio
       
-          echo "===== BUILD APPLICATION ====="
+          echo "===== BUILD APPLICATION IMAGE ====="
           $COMPOSE build backend celery
       
-          echo "===== START CELERY WITHOUT WAIT ====="
+          echo "===== START CELERY ====="
           $COMPOSE up -d --no-deps celery
       
-          sleep 20
+          echo "===== WAIT FOR CELERY HEALTH ====="
+          for i in $(seq 1 36); do
+            STATUS=$(docker inspect \
+              --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' \
+              openhealthcare-celery-1)
       
-          echo "===== CELERY STATUS ====="
-          $COMPOSE ps -a celery
+            echo "Attempt $i/36: Celery status = $STATUS"
       
-          echo "===== CELERY LOGS ====="
-          $COMPOSE logs --no-color --tail=200 celery
+            if [ "$STATUS" = "healthy" ]; then
+              echo "===== CELERY HEALTHY ====="
+              break
+            fi
       
-          echo "===== CELERY INSPECT ====="
-          $COMPOSE exec -T celery celery -A config.celery_app inspect ping
+            if [ "$STATUS" = "unhealthy" ]; then
+              echo "===== CELERY LOGS ====="
+              $COMPOSE logs --tail=200 celery
+              exit 1
+            fi
       
-          echo "===== CELERY HEALTH ====="
-          docker inspect openhealthcare-celery-1 \
-            --format '{{json .State.Health}}'
+            sleep 10
+          done
       
-          echo "===== BACKEND START ====="
-          $COMPOSE up -d --no-deps backend
+          if [ "$STATUS" != "healthy" ]; then
+            echo "Celery did not become healthy within 6 minutes"
+            $COMPOSE logs --tail=200 celery
+            docker inspect openhealthcare-celery-1 \
+              --format '{{json .State.Health}}'
+            exit 1
+          fi
       
-          echo "===== ALL STATUS ====="
-          $COMPOSE ps -a
+          echo "===== START BACKEND ====="
+          $COMPOSE up -d backend
       
-          exit 1
-      - name: Diagnose Celery worker
-        if: always()
-        run: |
-          set +e
-
-          CELERY_ID=$(docker compose \
-            -f docker-compose.yaml \
-            -f docker-compose.local.yaml ps -q celery)
-
-          echo "===== CONTAINER ID ====="
-          echo "$CELERY_ID"
-
-          echo "===== WAIT 180 SECONDS FOR CELERY STARTUP ====="
-          sleep 180
-
-          echo "===== CONTAINER HOSTNAME ====="
-          docker exec "$CELERY_ID" sh -c 'echo "$HOSTNAME"'
-
-          echo "===== CELERY PROCESSES ====="
-          docker exec "$CELERY_ID" sh -c '
-            for p in /proc/[0-9]*/cmdline; do
-              [ -r "$p" ] || continue
-              printf "%s: " "$p"
-              tr "\000" " " < "$p"
-              echo
-            done
-          '
-
-          echo "===== CELERY PING ====="
-          docker exec "$CELERY_ID" sh -c \
-            'celery -A config.celery_app inspect ping -d "celery@$HOSTNAME"'
-          echo "Ping exit code: $?"
-
-          echo "===== CELERY LOGS ====="
-          docker compose -f docker-compose.yaml \
-            -f docker-compose.local.yaml logs --tail=150 celery
-
-          echo "===== CELERY HEALTH STATUS ====="
-          docker inspect "$CELERY_ID" \
-            --format '{{json .State.Health}}'    
+          echo "===== FINAL SERVICE STATUS ====="
+          $COMPOSE ps
       
-                
       - name: Diagnose backend and celery startup
         run: |
           echo "===== LOCAL COMPOSE FILE ====="
