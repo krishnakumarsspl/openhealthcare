@@ -36,7 +36,7 @@ teardown:
 
 #TODO: remove alias load-dummy-data
 load-fixtures load-dummy-data:
-	docker compose exec backend bash -c "python manage.py load_fixtures$(if $(path), --path $(path),)"
+	docker compose -f docker-compose.yaml -f $(docker_config_file) exec backend bash -c "python manage.py load_fixtures$(if $(path), --path $(path),)"
 
 list:
 	docker compose -f docker-compose.yaml -f $(docker_config_file) ps
@@ -45,25 +45,25 @@ logs:
 	docker compose -f docker-compose.yaml -f $(docker_config_file) logs
 
 checkmigration:
-	docker compose exec backend bash -c "python manage.py makemigrations --check --dry-run"
+	docker compose -f docker-compose.yaml -f $(docker_config_file) exec backend bash -c "python manage.py makemigrations --check --dry-run"
 
 makemigrations:
-	docker compose exec backend bash -c "python manage.py makemigrations"
+	docker compose -f docker-compose.yaml -f $(docker_config_file) exec backend bash -c "python manage.py makemigrations"
 
 migrate:
-	docker compose exec backend bash -c "python manage.py migrate"
+	docker compose -f docker-compose.yaml -f $(docker_config_file) exec backend bash -c "python manage.py migrate"
 
 test:
-	docker compose exec backend bash -c "python manage.py test $(path) --keepdb --parallel --shuffle"
+	docker compose -f docker-compose.yaml -f $(docker_config_file) exec backend bash -c "python manage.py test $(path) --keepdb --parallel --shuffle"
 
 test-no-keep:
-	docker compose exec backend bash -c "python manage.py test $(path) --parallel --shuffle"
-
+	docker compose -f docker-compose.yaml -f $(docker_config_file) exec backend bash -c "python manage.py test $(path) --parallel --shuffle"
 
 test-coverage:
-	docker compose exec backend bash -c "coverage run manage.py test --settings=config.settings.test --keepdb --parallel --shuffle"
-	docker compose exec backend bash -c "coverage combine || true; coverage xml"
-	docker compose cp backend:/app/coverage.xml coverage.xml
+	docker compose -f docker-compose.yaml -f $(docker_config_file) exec backend bash -c "coverage run manage.py test --settings=config.settings.test --keepdb --parallel --shuffle"
+	docker compose -f docker-compose.yaml -f $(docker_config_file) exec backend bash -c "coverage combine || true; coverage xml"
+	docker compose -f docker-compose.yaml -f $(docker_config_file) cp backend:/app/coverage.xml coverage.xml
+
 
 dump-db:
 	docker compose exec db sh -c "pg_dump -U postgres -Fc care > /tmp/care_db.dump"
