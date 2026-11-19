@@ -98,7 +98,44 @@ jobs:
           $COMPOSE ps -a
       
           exit 1
-          
+      - name: Diagnose Celery worker
+        if: always()
+        run: |
+          COMPOSE="docker compose -f docker-compose.yaml -f docker-compose.local.yaml"
+      
+          echo "===== CELERY STARTUP SCRIPT ====="
+          cat scripts/celery-dev.sh
+      
+          echo
+          echo "===== EFFECTIVE CELERY HEALTHCHECK ====="
+          $COMPOSE config | sed -n '/celery:/,/^[^ ]/p'
+      
+          echo
+          echo "===== WAIT 60 SECONDS ====="
+          sleep 60
+      
+          echo
+          echo "===== CONTAINER HOSTNAME ====="
+          docker exec openhealthcare-celery-1 hostname
+      
+          echo
+          echo "===== CELERY PROCESSES ====="
+          docker exec openhealthcare-celery-1 ps aux
+      
+          echo
+          echo "===== CELERY WORKER PING ====="
+          docker exec openhealthcare-celery-1 \
+            celery -A config.celery_app inspect ping
+      
+          echo
+          echo "===== CELERY LOGS ====="
+          $COMPOSE logs --no-color --tail=250 celery
+      
+          echo
+          echo "===== HEALTH STATUS ====="
+          docker inspect openhealthcare-celery-1 \
+            --format '{{json .State.Health}}'   
+                
       - name: Diagnose backend and celery startup
         run: |
           echo "===== LOCAL COMPOSE FILE ====="
