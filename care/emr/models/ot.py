@@ -297,6 +297,18 @@ class OTPreOperativeAssessment(EMRBaseModel):
         help_text="Pre-operative checklist completed on the day before surgery.",
     )
 
+    surgery_checklist_ids = models.TextField(
+        blank=True,
+        default="",
+        help_text="Comma-separated Surgery Check List master IDs.",
+    )
+
+    day_of_surgery_checklist_ids = models.TextField(
+        blank=True,
+        default="",
+        help_text="Comma-separated Day of Surgery Check List master IDs.",
+    )
+
     day_of_surgery = models.JSONField(
         default=dict,
         blank=True,
@@ -586,3 +598,47 @@ class OTPatientTransfer(EMRBaseModel):
 
     def __str__(self):
         return f"OT patient transfer: {self.surgery_schedule}"
+
+
+class SurgeryCheckList(EMRBaseModel):
+    checklist_name = models.CharField(max_length=255)
+
+    sequence = models.PositiveIntegerField(default=1)
+
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ("active", "Active"),
+            ("inactive", "Inactive"),
+        ],
+        default="active",
+    )
+
+    class Meta:
+        db_table = "emr_surgery_checklist"
+        ordering = ["sequence"]
+
+    def __str__(self):
+        return self.checklist_name
+
+
+class DayOfSurgeryCheckList(EMRBaseModel):
+    checklist_name = models.CharField(max_length=255)
+
+    sequence = models.PositiveIntegerField(default=1)
+
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ("active", "Active"),
+            ("inactive", "Inactive"),
+        ],
+        default="active",
+    )
+
+    class Meta:
+        db_table = "emr_day_of_surgery_checklist"
+        ordering = ["sequence"]
+
+    def __str__(self):
+        return self.checklist_name

@@ -120,6 +120,7 @@ from care.emr.api.viewsets.ot import (
     AnaesthesiaViewSet,
     SurgeryAnaesthesiaConfigViewSet,
     OTWaitingListViewSet,
+    SurgeryCheckListViewSet, DayOfSurgeryCheckListViewSet,
 )
 from care.emr.api.viewsets.surgery_order import SurgeryOrderViewSet
 from care.emr.api.viewsets.ot_schedule import OTSchedulingViewSet
@@ -590,6 +591,19 @@ router.register("template", TemplateViewSet, basename="template")
 router.register("template_reports", ReportUploadViewSet, basename="template-reports")
 
 router.register("extensions", ExtensionsViewSet, basename="extensions")
+
+router.register(
+    "surgery_checklist",
+    SurgeryCheckListViewSet,
+    basename="surgery-checklist",
+)
+
+router.register(
+    "day_of_surgery_checklist",
+    DayOfSurgeryCheckListViewSet,
+    basename="day-of-surgery-checklist",
+)
+
 app_name = "api"
 urlpatterns = [
     path("", include(router.urls)),

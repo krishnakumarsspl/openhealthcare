@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from care.emr.api.viewsets.base import EMRModelViewSet
-from care.emr.models import OTRoom, SurgeryProcedure, Anaesthesia, SurgeryAnaesthesiaConfig
+from care.emr.models import OTRoom, SurgeryProcedure, Anaesthesia, SurgeryAnaesthesiaConfig,SurgeryCheckList, DayOfSurgeryCheckList
 from care.emr.models.patient import PatientIdentifier
 from care.emr.models.service_request import ServiceRequest
 from care.emr.models.organization import FacilityOrganization
@@ -26,6 +26,14 @@ from care.emr.resources.ot.spec import (
     SurgeryAnaesthesiaConfigUpdateSpec,
     SurgeryAnaesthesiaConfigListSpec,
     SurgeryAnaesthesiaConfigRetrieveSpec,
+    SurgeryCheckListWriteSpec,
+    SurgeryCheckListUpdateSpec,
+    SurgeryCheckListListSpec,
+    SurgeryCheckListRetrieveSpec,
+    DayOfSurgeryCheckListWriteSpec,
+    DayOfSurgeryCheckListUpdateSpec,
+    DayOfSurgeryCheckListListSpec,
+    DayOfSurgeryCheckListRetrieveSpec,
 )
 from care.facility.models import Facility
 from care.security.authorization import AuthorizationController
@@ -138,7 +146,7 @@ class OTRoomViewSet(EMRModelViewSet):
         if not AuthorizationController.call(
             "can_update_facility_location_obj",
             self.request.user,
-            model_instance,
+            model_instance.location,
         ):
             raise PermissionDenied(
                 "You do not have permission to update OT Setup."
@@ -668,3 +676,60 @@ class OTWaitingListViewSet(GenericViewSet):
             return paginator.get_paginated_response(results)
 
         return Response({"count": len(results), "results": results})
+
+
+
+class SurgeryCheckListViewSet(EMRModelViewSet):
+    database_model = SurgeryCheckList
+    lookup_field = "id"
+    pydantic_model = SurgeryCheckListWriteSpec
+    pydantic_update_model = SurgeryCheckListUpdateSpec
+    pydantic_read_model = SurgeryCheckListListSpec
+    pydantic_retrieve_model = SurgeryCheckListRetrieveSpec
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(deleted=False)
+            .order_by("sequence")
+        )
+
+    def perform_destroy(self, instance):
+        instance.deleted = True
+        instance.updated_by = self.request.user
+        instance.save(
+            update_fields=[
+                "deleted",
+                "updated_by",
+                "modified_date",
+            ]
+        )
+
+
+class DayOfSurgeryCheckListViewSet(EMRModelViewSet):
+    database_model = DayOfSurgeryCheckList
+    lookup_field = "id"
+    pydantic_model = DayOfSurgeryCheckListWriteSpec
+    pydantic_update_model = DayOfSurgeryCheckListUpdateSpec
+    pydantic_read_model = DayOfSurgeryCheckListListSpec
+    pydantic_retrieve_model = DayOfSurgeryCheckListRetrieveSpec
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(deleted=False)
+            .order_by("sequence")
+        )
+
+    def perform_destroy(self, instance):
+        instance.deleted = True
+        instance.updated_by = self.request.user
+        instance.save(
+            update_fields=[
+                "deleted",
+                "updated_by",
+                "modified_date",
+            ]
+        )
