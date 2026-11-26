@@ -1,10 +1,17 @@
+from decimal import Decimal
 from enum import Enum
 
 from pydantic import UUID4, Field
 
 from care.emr.models.location import FacilityLocation
-from care.emr.models.ot import OTRoom, SurgeryProcedure, Anaesthesia, SurgeryAnaesthesiaConfig, SurgeryCheckList, DayOfSurgeryCheckList
-
+from care.emr.models.ot import (
+    Anaesthesia,
+    DayOfSurgeryCheckList,
+    OTRoom,
+    SurgeryAnaesthesiaConfig,
+    SurgeryCheckList,
+    SurgeryProcedure,
+)
 from care.emr.resources.base import EMRResource
 
 
@@ -39,7 +46,7 @@ class OTRoomSpec(OTRoomBaseSpec):
         # None means the field was not supplied; preserve existing selections.
         # An empty list means clear all assigned procedures.
         if self.surgery_procedures is not None:
-            obj._surgery_procedure_ids = self.surgery_procedures
+            obj.surgery_procedure_ids = self.surgery_procedures
 
 
 class OTRoomWriteSpec(OTRoomSpec):
@@ -109,9 +116,8 @@ class SurgeryProcedureSpec(SurgeryProcedureBaseSpec):
     def perform_extra_deserialization(self, is_update, obj):
         from care.emr.models.organization import FacilityOrganization
 
-        obj.department = FacilityOrganization.objects.get(
-            external_id=self.department
-        )
+        obj.department = FacilityOrganization.objects.get(external_id=self.department)
+
 
 class SurgeryProcedureWriteSpec(SurgeryProcedureSpec):
     pass
@@ -152,6 +158,7 @@ class SurgeryProcedureRetrieveSpec(SurgeryProcedureListSpec):
     def perform_extra_serialization(cls, mapping, obj):
         super().perform_extra_serialization(mapping, obj)
         cls.serialize_audit_users(mapping, obj)
+
 
 class AnaesthesiaStatusChoices(str, Enum):
     active = "active"
@@ -210,8 +217,7 @@ class AnaesthesiaRetrieveSpec(AnaesthesiaListSpec):
         cls.serialize_audit_users(mapping, obj)
 
 
-# Surgery–Anaesthesia Configuration
-from decimal import Decimal
+# Surgery-Anaesthesia Configuration
 
 
 class SurgeryAnaesthesiaConfigStatusChoices(str, Enum):
@@ -266,12 +272,8 @@ class SurgeryAnaesthesiaConfigListSpec(SurgeryAnaesthesiaConfigSpec):
     @classmethod
     def perform_extra_serialization(cls, mapping, obj):
         mapping["id"] = str(obj.external_id)
-        mapping["surgery_procedure"] = str(
-            obj.surgery_procedure.external_id
-        )
-        mapping["surgery_procedure_name"] = (
-            obj.surgery_procedure.procedure_name
-        )
+        mapping["surgery_procedure"] = str(obj.surgery_procedure.external_id)
+        mapping["surgery_procedure_name"] = obj.surgery_procedure.procedure_name
         mapping["facility"] = {
             "id": str(obj.facility.external_id),
             "name": obj.facility.name,
@@ -297,7 +299,7 @@ class SurgeryAnaesthesiaConfigRetrieveSpec(SurgeryAnaesthesiaConfigListSpec):
 class SurgeryCheckListBaseSpec(EMRResource):
     __model__ = SurgeryCheckList
 
-    id: UUID4 | None = None
+    id: int | None = None
 
 
 class SurgeryCheckListSpec(SurgeryCheckListBaseSpec):
@@ -314,7 +316,6 @@ class SurgeryCheckListUpdateSpec(SurgeryCheckListSpec):
     checklist_name: str
     sequence: int
     status: str
-
 
 
 class SurgeryCheckListListSpec(SurgeryCheckListSpec):
